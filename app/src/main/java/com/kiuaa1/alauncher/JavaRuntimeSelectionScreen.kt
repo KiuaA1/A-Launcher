@@ -158,7 +158,7 @@ private fun JavaSelectionCard(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                "@{option.major}",
+                "${option.major}",
                 color = Color.White,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Medium
@@ -170,7 +170,7 @@ private fun JavaSelectionCard(
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Java @{option.major}",
+                    "Java ${option.major}",
                     color = Color.White,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Medium
@@ -200,7 +200,7 @@ private fun JavaSelectionCard(
             Spacer(Modifier.height(3.dp))
 
             Text(
-                "arm64  ·  ~@{option.sizeMb} MB",
+                "arm64  ·  ~${option.sizeMb} MB",
                 color = Color(0xFF858B9A),
                 style = MaterialTheme.typography.bodyMedium
             )
