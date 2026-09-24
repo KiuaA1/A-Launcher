@@ -157,3 +157,11 @@ pub fn prepare_download_async<'a>(
         Ok(DownloadStatus::Downloaded)
     }
 }
+
+
+impl DownloadTransport for ReqwestDownloadTransport {
+    fn fetch_to(&self, url: &str, destination: &std::path::Path) -> Result<(), EngineError> {
+        let runtime = tokio::runtime::Runtime::new().map_err(|e| EngineError::DownloadFailed(format!("create download runtime: {e}")))?;
+        runtime.block_on(self.fetch_to_async(url, destination))
+    }
+}
