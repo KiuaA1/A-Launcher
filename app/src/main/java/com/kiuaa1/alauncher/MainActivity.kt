@@ -39,7 +39,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun LauncherShell(api: LauncherApi) {
     var selected by remember { mutableIntStateOf(0) }
-    var selectedInstance by remember { mutableStateOf("Minecraft...") }
+    var selectedInstance by remember { mutableStateOf(api.listInstances().firstOrNull()?.id ?: "") }
+    var launchStatus by remember { mutableStateOf(LaunchStatus.Idle) }
 
     Box(Modifier.fillMaxSize().background(Space)) {
         when (selected) {
@@ -47,7 +48,9 @@ private fun LauncherShell(api: LauncherApi) {
                 instances = api.listInstances(),
                 selectedInstance = selectedInstance,
                 onSelectInstance = { selectedInstance = it },
-                onInstances = { selected = 1 }
+                onInstances = { selected = 1 },
+                launchStatus = launchStatus,
+                onLaunch = { if (selectedInstance.isNotBlank()) launchStatus = api.launch(selectedInstance) }
             )
             1 -> InstancesReferenceScreen(api)
             2 -> BrowseResourcesReferenceScreen()
@@ -69,7 +72,9 @@ private fun HomeScreen(
     instances: List<InstanceSummary>,
     selectedInstance: String,
     onSelectInstance: (String) -> Unit,
-    onInstances: () -> Unit
+    onInstances: () -> Unit,
+    launchStatus: LaunchStatus,
+    onLaunch: () -> Unit
 ) {
     Box(Modifier.fillMaxSize()) {
         Starfield()
@@ -87,7 +92,7 @@ private fun HomeScreen(
             ) {
                 PixelAvatar()
                 Spacer(Modifier.height(2.dp))
-                LaunchButton()
+                LaunchButton(status = launchStatus, onClick = onLaunch)
                 Spacer(Modifier.height(13.dp))
                 RuntimePill()
             }
@@ -207,9 +212,10 @@ private fun PixelAvatar() {
 }
 
 @Composable
-private fun LaunchButton() {
+private fun LaunchButton(status: LaunchStatus, onClick: () -> Unit) {
     Button(
-        onClick = { },
+        onClick = onClick,
+        enabled = status != LaunchStatus.Preparing && status != LaunchStatus.Launching && status != LaunchStatus.Running,
         modifier = Modifier.width(310.dp).height(76.dp),
         shape = RoundedCornerShape(40.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF08090E)),
@@ -217,7 +223,7 @@ private fun LaunchButton() {
     ) {
         Text("▶", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.width(14.dp))
-        Text("LAUNCH", fontWeight = FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp), style = MaterialTheme.typography.titleLarge)
+        Text(when (status) { LaunchStatus.Preparing -> "PREPARING"; LaunchStatus.Launching -> "STARTING"; LaunchStatus.Running -> "RUNNING"; LaunchStatus.Failed -> "RETRY"; LaunchStatus.Idle -> "LAUNCH" }, fontWeight = FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp), style = MaterialTheme.typography.titleLarge)
     }
 }
 
