@@ -21,7 +21,7 @@ interface LauncherApi {
     fun launch(instanceId: String): LaunchStatus
 }
 
-class LocalLauncherApi(private val native: NativeLauncherBridge = UnavailableNativeLauncherBridge()) : LauncherApi {
+class LocalLauncherApi(private val native: NativeLauncherBridge = JniNativeLauncherBridge()) : LauncherApi {
     private val instances = linkedMapOf<String, InstanceSummary>()
 
     override fun listInstances(): List<InstanceSummary> = instances.values.toList()
@@ -57,6 +57,17 @@ interface NativeLauncherBridge {
     fun launch(instanceId: String): LaunchStatus
 }
 
-class UnavailableNativeLauncherBridge : NativeLauncherBridge {
-    override fun launch(instanceId: String): LaunchStatus = LaunchStatus.Failed
+class JniNativeLauncherBridge : NativeLauncherBridge {
+    override fun launch(instanceId: String): LaunchStatus = when (nativeLaunch(instanceId)) {
+        1 -> LaunchStatus.Preparing
+        2 -> LaunchStatus.Launching
+        3 -> LaunchStatus.Running
+        else -> LaunchStatus.Failed
+    }
+
+    private external fun nativeLaunch(instanceId: String): Int
+
+    companion object {
+        init { System.loadLibrary("a_launcher") }
+    }
 }
