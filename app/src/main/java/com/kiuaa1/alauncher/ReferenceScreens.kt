@@ -386,14 +386,21 @@ private fun CursorSlider(label: String, value: Float, suffix: String, onChange: 
 }
 
 @Composable
+
+@Composable
 fun InstancesReferenceScreen(api: LauncherApi) {
     var instances by remember { mutableStateOf(api.listInstances()) }
     var showCreate by remember { mutableStateOf(false) }
+    var editingId by remember { mutableStateOf<String?>(null) }
     if (showCreate) {
         CreateVersionReferenceScreen(onBack = { showCreate = false }, onCreate = { id, name, version, loader ->
             api.createInstance(id, name, version, loader); instances = api.listInstances(); showCreate = false
-        })
-        return
+        }); return
+    }
+    editingId?.let { id ->
+        instances.firstOrNull { it.id == id }?.let { instance ->
+            ProfileStudioReferenceScreen(instance, { editingId = null }, { editingId = null; instances = api.listInstances() }); return
+        }
     }
     Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 24.dp, end = 30.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -408,8 +415,7 @@ fun InstancesReferenceScreen(api: LauncherApi) {
                 Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Text("No instances yet", color = RefText, style = MaterialTheme.typography.headlineSmall)
                     Text("Create an instance to start configuring Minecraft.", color = RefMuted)
-                    Spacer(Modifier.height(18.dp))
-                    Button(onClick = { showCreate = true }) { Text("CREATE INSTANCE") }
+                    Spacer(Modifier.height(18.dp)); Button(onClick = { showCreate = true }) { Text("CREATE INSTANCE") }
                 }
             }
         } else {
@@ -420,19 +426,124 @@ fun InstancesReferenceScreen(api: LauncherApi) {
                             Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF343841)), contentAlignment = Alignment.Center) {
                                 Text(if (instance.loader == null) "▣" else "◇", color = RefText, style = MaterialTheme.typography.headlineSmall)
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Column(Modifier.weight(1f)) {
+                            Spacer(Modifier.width(16.dp)); Column(Modifier.weight(1f)) {
                                 Text(instance.name, color = RefText, style = MaterialTheme.typography.titleLarge)
                                 Text("Minecraft " + instance.minecraftVersion + (instance.loader?.let { "  ·  " + it } ?: "  ·  Vanilla"), color = RefMuted)
                             }
-                            OutlinedButton(onClick = {}) { Text("EDIT") }
+                            OutlinedButton(onClick = { editingId = instance.id }) { Text("EDIT") }
                             Spacer(Modifier.width(8.dp)); Button(onClick = {}) { Text("PLAY") }
-                            Spacer(Modifier.width(8.dp)); Text("⋮", color = RefMuted, style = MaterialTheme.typography.titleLarge)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ProfileStudioReferenceScreen(instance: InstanceSummary, onBack: () -> Unit, onSave: () -> Unit) {
+    var section by remember { mutableStateOf("General") }
+    var name by remember { mutableStateOf(instance.name) }
+    var version by remember { mutableStateOf("fabric-loader-0.19.5-" + instance.minecraftVersion) }
+    var directory by remember { mutableStateOf("./custom_instances/" + instance.id) }
+    var ram by remember { mutableFloatStateOf(2304f) }
+    var renderer by remember { mutableStateOf("Auto") }
+    val sections = listOf("General", "Mods", "Resource Packs", "Shaders", "RAM", "Renderer", "Skin", "Cape")
+
+    Row(Modifier.fillMaxSize().background(Color(0xFF080A10)).padding(start = 145.dp, top = 16.dp, end = 28.dp, bottom = 20.dp)) {
+        Column(Modifier.fillMaxHeight().width(300.dp)) {
+            Row(Modifier.fillMaxWidth().height(72.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(Modifier.size(58.dp), RoundedCornerShape(29.dp), color = Color(0xFF111722), onClick = onBack) { Box(contentAlignment = Alignment.Center) { Text("‹", color = RefText, style = MaterialTheme.typography.headlineLarge) } }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.padding(start = 4.dp)) {
+                    Text("Profile Studio", color = RefMuted, style = MaterialTheme.typography.labelLarge)
+                    Text(name, color = RefText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                }
+            }
+            HorizontalDivider(color = Color(0xFF242832))
+            Spacer(Modifier.height(18.dp))
+            sections.forEach { item ->
+                val active = item == section
+                Surface(onClick = { section = item }, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(28.dp), color = if (active) Color(0xFF183525) else Color.Transparent) {
+                    Box(Modifier.fillMaxSize().padding(horizontal = 24.dp), contentAlignment = Alignment.CenterStart) {
+                        Text(item, color = if (active) Color(0xFF66AFFF) else Color(0xFF858B99), style = MaterialTheme.typography.titleMedium, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
+                    }
+                }
+            }
+        }
+        Column(Modifier.fillMaxSize().padding(start = 30.dp)) {
+            Row(Modifier.fillMaxWidth().height(72.dp), verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
+                OutlinedButton(onClick = onBack, modifier = Modifier.height(58.dp), shape = RoundedCornerShape(29.dp)) { Text("CANCEL") }
+                Spacer(Modifier.width(12.dp))
+                OutlinedButton(onClick = {}, modifier = Modifier.height(58.dp), shape = RoundedCornerShape(29.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF8A8A))) { Text("DELETE") }
+                Spacer(Modifier.width(12.dp))
+                Button(onClick = onSave, modifier = Modifier.height(58.dp).width(112.dp), shape = RoundedCornerShape(29.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDDE1E8), contentColor = Color(0xFF15171D))) { Text("SAVE", fontWeight = FontWeight.Bold) }
+            }
+            HorizontalDivider(color = Color(0xFF242832))
+            Row(Modifier.padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                Surface(shape = RoundedCornerShape(18.dp), color = Color(0xFFDDE1E8)) { Text(version, color = Color(0xFF20232B), modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp), fontWeight = FontWeight.Bold) }
+                Text(instance.loader ?: "Vanilla", color = RefMuted)
+                Text("Played 2h ago", color = RefMuted); Text("1 MB", color = RefMuted)
+            }
+            Spacer(Modifier.height(14.dp))
+            when (section) {
+                "General" -> ProfileGeneralPanel(name, { name = it }, version, { version = it }, directory, { directory = it })
+                "RAM" -> ProfileControlCard("RAM", "Java heap allocation for this profile.") {
+                    Text(ram.toInt().toString() + " MB", color = RefText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    Slider(value = ram, onValueChange = { ram = it }, valueRange = 512f..8192f)
+                }
+                "Renderer" -> ProfileControlCard("Renderer", "Choose the graphics backend used by Minecraft.") {
+                    listOf("Auto", "OpenGL / GL4ES", "ANGLE", "VirGL").forEach { item ->
+                        Surface(onClick = { renderer = item }, modifier = Modifier.fillMaxWidth().height(58.dp), shape = RoundedCornerShape(18.dp), color = if (renderer == item) Color(0xFF263044) else Color(0xFF11141B)) {
+                            Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) { Text(item, color = RefText, modifier = Modifier.weight(1f)); Text(if (renderer == item) "●" else "○", color = RefText) }
+                        }
+                    }
+                }
+                else -> ProfileControlCard(section, "Profile-specific " + section.lowercase() + " settings.") {
+                    Text("No " + section.lowercase() + " configured.", color = RefMuted)
+                    Button(onClick = {}) { Text("OPEN STORE") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileGeneralPanel(name: String, onName: (String) -> Unit, version: String, onVersion: (String) -> Unit, directory: String, onDirectory: (String) -> Unit) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF171B25)), shape = RoundedCornerShape(28.dp)) {
+        Column(Modifier.padding(30.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("General", color = RefText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Profile name, Minecraft version and game folder.", color = RefMuted, style = MaterialTheme.typography.titleMedium)
+            ProfileField("NAME", name, onName)
+            ProfileFieldWithButton("VERSION", version, onVersion, "SELECT")
+            ProfileFieldWithButton("GAME DIRECTORY", directory, onDirectory, "SELECT")
+            Text("PROFILE BACKGROUND", color = RefMuted, style = MaterialTheme.typography.labelLarge)
+            Box(Modifier.fillMaxWidth().height(158.dp).clip(RoundedCornerShape(24.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF102A28), Color(0xFF15221D), Color(0xFF0D1720))))) {
+                Button(onClick = {}, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp), shape = RoundedCornerShape(22.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC111722))) { Text("CHANGE BACKGROUND") }
+            }
+        }
+    }
+}
+
+@Composable private fun ProfileField(label: String, value: String, onValue: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(label, color = RefMuted, style = MaterialTheme.typography.labelLarge)
+        OutlinedTextField(value = value, onValueChange = onValue, modifier = Modifier.fillMaxWidth().height(76.dp), singleLine = true, shape = RoundedCornerShape(20.dp))
+    }
+}
+@Composable private fun ProfileFieldWithButton(label: String, value: String, onValue: (String) -> Unit, button: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(label, color = RefMuted, style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(value = value, onValueChange = onValue, modifier = Modifier.weight(1f).height(76.dp), singleLine = true, shape = RoundedCornerShape(20.dp))
+            OutlinedButton(onClick = {}, modifier = Modifier.width(145.dp).height(76.dp), shape = RoundedCornerShape(38.dp)) { Text(button, fontWeight = FontWeight.Bold) }
+        }
+    }
+}
+@Composable private fun ProfileControlCard(title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF171B25)), shape = RoundedCornerShape(28.dp)) {
+        Column(Modifier.padding(30.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) { Text(title, color = RefText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text(subtitle, color = RefMuted, style = MaterialTheme.typography.titleMedium); content() }
     }
 }
 
