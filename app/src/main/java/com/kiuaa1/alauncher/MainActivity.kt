@@ -42,9 +42,12 @@ private fun LauncherShell(api: LauncherApi) {
     var selected by remember { mutableIntStateOf(0) }
     var selectedInstance by remember { mutableStateOf(api.listInstances().firstOrNull()?.id ?: "") }
     var launchStatus by remember { mutableStateOf(LaunchStatus.Idle) }
+    var showRuntimeSetup by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize().background(Space)) {
-        when (selected) {
+        if (showRuntimeSetup) {
+            RuntimeSetupReferenceScreen(onDone = { showRuntimeSetup = false })
+        } else when (selected) {
             0 -> HomeScreen(
                 instances = api.listInstances(),
                 selectedInstance = selectedInstance,
@@ -95,7 +98,7 @@ private fun HomeScreen(
                 Spacer(Modifier.height(2.dp))
                 LaunchButton(status = launchStatus, onClick = onLaunch)
                 Spacer(Modifier.height(13.dp))
-                RuntimePill()
+                RuntimePill(onClick = { showRuntimeSetup = true })
             }
 
             InstanceRail(
@@ -229,9 +232,9 @@ private fun LaunchButton(status: LaunchStatus, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RuntimePill() {
+private fun RuntimePill(onClick: () -> Unit) {
     Row(
-        Modifier.clip(RoundedCornerShape(22.dp)).background(Color(0xB91A1E29)).padding(horizontal = 20.dp, vertical = 9.dp),
+        Modifier.clip(RoundedCornerShape(22.dp)).background(Color(0xB91A1E29)).clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("▣", color = Color.White)
