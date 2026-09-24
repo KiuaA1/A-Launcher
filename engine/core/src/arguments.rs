@@ -41,9 +41,51 @@ fn values(v:&Value,ctx:&LaunchContext,out:&mut Vec<String>)->Result<(),EngineErr
         _=>Err(EngineError::ManifestInvalid("unsupported argument value".into()))
     }
 }
+fn tokenize_legacy_arguments(input:&str)->Result<Vec<String>,EngineError>{
+    let mut tokens=Vec::new();
+    let mut current=String::new();
+    let mut quote:Option<char>=None;
+    let mut escaped=false;
+    for ch in input.chars() {
+        if escaped {
+            current.push(ch);
+            escaped=false;
+            continue;
+        }
+        if ch=='\\' && quote==Some('"') {
+            escaped=true;
+            continue;
+        }
+        match quote {
+            Some(q) if ch==q => quote=None,
+            Some(_) => current.push(ch),
+            None if ch=='"' || ch=='\\'' => quote=Some(ch),
+            None if ch.is_whitespace() => {
+                if !current.is_empty() {
+                    tokens.push(std::mem::take(&mut current));
+                }
+            }
+            None => current.push(ch),
+        }
+    }
+    if escaped { current.push('\\'); }
+    if quote.is_some() {
+        return Err(EngineError::ManifestInvalid("unterminated quote in legacy Minecraft arguments".into()));
+    }
+    if !current.is_empty() { tokens.push(current); }
+    Ok(tokens)
+}
+
 pub fn build_arguments(arguments:Option<&Arguments>,legacy:Option<&str>,ctx:&LaunchContext)->Result<(Vec<String>,Vec<String>),EngineError>{
     if let Some(a)=arguments {let mut j=Vec::new();let mut g=Vec::new();for v in &a.jvm{values(v,ctx,&mut j)?;}for v in &a.game{values(v,ctx,&mut g)?;}return Ok((j,g));}
-    Ok((Vec::new(),legacy.unwrap_or_default().split_whitespace().map(|s|ctx.substitute(s)).filter(|s|!s.is_empty()).collect()))
+    let mut out = Vec::new();
+    if let Some(input) = legacy {
+        for token in tokenize_legacy_arguments(input)? {
+            let value = ctx.substitute(&token);
+            if !value.is_empty() { out.push(value); }
+        }
+    }
+    Ok((Vec::new(), out))
 }
 pub fn build_launch_plan(prep:&LaunchPreparation,java_executable:&str,mut ctx:LaunchContext)->Result<LaunchPlan,EngineError>{
     ctx.version_name=prep.minecraft_version.clone();ctx.game_directory=prep.game_directory.to_string_lossy().into_owned();
