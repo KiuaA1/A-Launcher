@@ -48,6 +48,15 @@ class LocalLauncherApi(private val native: NativeLauncherBridge = UnavailableNat
 
     override fun launch(instanceId: String): LaunchStatus {
         check(instances.containsKey(instanceId)) { "Instance not found: $instanceId" }
-        return LaunchStatus.Preparing
+        return native.launch(instanceId)
     }
+}
+
+
+interface NativeLauncherBridge {
+    fun launch(instanceId: String): LaunchStatus
+}
+
+class UnavailableNativeLauncherBridge : NativeLauncherBridge {
+    override fun launch(instanceId: String): LaunchStatus = LaunchStatus.Failed
 }
