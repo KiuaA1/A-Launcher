@@ -46,3 +46,18 @@ mod tests {
     use super::*;
     #[test] fn parses_manifest() { let x=parse_manifest_json(r#"{"versions":[{"id":"1.21.8","url":"https://example.invalid/1.json"}]}"#).unwrap(); assert_eq!(x.versions[0].id,"1.21.8"); }
 }
+
+pub fn merge_version_json(parent: &VersionJson, child: &VersionJson) -> VersionJson {
+    let mut merged = parent.clone();
+    merged.id = child.id.clone();
+    merged.main_class = if child.main_class.trim().is_empty() { parent.main_class.clone() } else { child.main_class.clone() };
+    merged.inherits_from = child.inherits_from.clone();
+    merged.java_version = child.java_version.clone().or_else(|| parent.java_version.clone());
+    merged.downloads = child.downloads.clone();
+    let mut libraries = parent.libraries.clone();
+    libraries.extend(child.libraries.clone());
+    merged.libraries = libraries;
+    merged.arguments = child.arguments.clone().or_else(|| parent.arguments.clone());
+    merged.minecraft_arguments = child.minecraft_arguments.clone().or_else(|| parent.minecraft_arguments.clone());
+    merged
+}
