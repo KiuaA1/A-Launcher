@@ -95,3 +95,25 @@ mod tests {
         let _ = std::fs::remove_dir_all(dir);
     }
 }
+
+
+pub struct ReqwestDownloadTransport { client: reqwest::Client }
+
+impl ReqwestDownloadTransport {
+    pub fn new() -> Result<Self, EngineError> {
+        let client = reqwest::Client::builder().build()
+            .map_err(|e| EngineError::DownloadFailed(format!("create HTTP client: {e}")))?;
+        Ok(Self { client })
+    }
+
+    pub async fn fetch_to_async(&self, url: &str, destination: &std::path::Path) -> Result<(), EngineError> {
+        let response = self.client.get(url).send().await
+            .map_err(|e| EngineError::DownloadFailed(format!("HTTP request: {e}")))?;
+        let response = response.error_for_status()
+            .map_err(|e| EngineError::DownloadFailed(format!("HTTP status: {e}")))?;
+        let bytes = response.bytes().await
+            .map_err(|e| EngineError::DownloadFailed(format!("read response: {e}")))?;
+        tokio::fs::write(destination, &bytes).await
+            .map_err(|e| EngineError::DownloadFailed(format!("write response: {e}")))
+    }
+}
