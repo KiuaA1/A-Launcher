@@ -65,6 +65,12 @@ impl VersionResolver for MojangResolver {
     }
 }
 
+pub fn resolve_inheritance(child_json: &str, parent_json: &str) -> Result<VersionJson, EngineError> {
+    let child = parse_version_json(child_json)?;
+    let parent = parse_version_json(parent_json)?;
+    Ok(crate::manifest::merge_version_json(&parent, &child))
+}
+
 pub fn resolution_from_version_json(json: &str) -> Result<Resolution, EngineError> {
     resolution_from_version_json_for(json, crate::resolver::TargetPlatform::android_arm64())
 }
