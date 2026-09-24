@@ -19,10 +19,21 @@ impl VersionResolver for MojangResolver {
 }
 
 pub fn resolution_from_version_json(json: &str) -> Result<Resolution, EngineError> {
-    let v=parse_version_json(json)?;
-    let client=MinecraftArtifact{id:v.id.clone(),url:v.downloads.client.url,sha1:Some(v.downloads.client.sha1),size:Some(v.downloads.client.size)};
-    let libraries=v.libraries.into_iter().filter_map(|l| l.downloads.artifact.map(|a| MinecraftArtifact{id:l.name,url:a.url,sha1:Some(a.sha1),size:Some(a.size)})).collect();
-    Ok(Resolution{minecraft_version:v.id,client_jar:client,libraries})
+    resolution_from_version_json_for(json, crate::resolver::TargetPlatform::android_arm64())
+}
+
+pub fn resolution_from_version_json_for(
+    json: &str,
+    platform: crate::resolver::TargetPlatform,
+) -> Result<Resolution, EngineError> {
+    let v = parse_version_json(json)?;
+    let client = MinecraftArtifact {
+        id: v.id.clone(), url: v.downloads.client.url, sha1: Some(v.downloads.client.sha1),
+        size: Some(v.downloads.client.size), path: v.downloads.client.path,
+        classifier: None, native: false,
+    };
+    let (libraries, native_libraries) = crate::resolver::resolve_libraries(&v.libraries, platform)?;
+    Ok(Resolution { minecraft_version: v.id, client_jar: client, libraries, native_libraries })
 }
 
 #[cfg(test)]
