@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::{error::EngineError,fs::StorageLayout,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::{DownloadRequest,DownloadTransport,prepare_download},classpath::{Classpath,build_classpath},native::extract_native_jar};
+use crate::{error::EngineError,fs::StorageLayout,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::{DownloadRequest,DownloadTransport,prepare_download},classpath::{Classpath,build_classpath},native::extract_native_jar,plan::LaunchPreparation,runtime::{RuntimeManager,JavaRuntime},manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan};
 
 #[derive(Debug,Clone)]
 pub struct LauncherEngine { pub storage:StorageLayout }
@@ -48,6 +48,13 @@ impl LauncherEngine {
   }
   events.push(Self::event(LaunchState::Preparing,format!("runtime ready: {} classpath entries, {extracted} native files",classpath.entries.len())));
   Ok((classpath,extracted,events))
+ }
+
+ pub fn build_launch_plan(&self,version:&VersionJson,resolution:Resolution,runtime:&RuntimeManager,classpath:Classpath,game_directory:impl Into<PathBuf>,context:LaunchContext)->Result<LaunchPlan,EngineError>{
+  let prep=LaunchPreparation::from_metadata(version,resolution,game_directory)?;
+  let required=prep.java_major_version;
+  let selected=runtime.select(required,None)?;
+  prep.build_launch_plan(&selected.executable.to_string_lossy(),&classpath,version.arguments.as_ref().ok_or_else(||EngineError::InvalidLaunchPlan("modern arguments are missing".into()))?,context)
  }
 
  pub fn prepare(&self)->Result<LaunchEvent,EngineError>{
