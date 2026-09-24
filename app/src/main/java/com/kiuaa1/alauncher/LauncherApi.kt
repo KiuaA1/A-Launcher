@@ -18,7 +18,7 @@ interface LauncherApi {
     fun deleteInstance(id: String)
 }
 
-class LocalLauncherApi : LauncherApi {
+class LocalLauncherApi(private val native: NativeLauncherBridge = UnavailableNativeLauncherBridge()) : LauncherApi {
     private val instances = linkedMapOf<String, InstanceSummary>()
 
     override fun listInstances(): List<InstanceSummary> = instances.values.toList()
