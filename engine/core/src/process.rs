@@ -49,6 +49,33 @@ impl ManagedProcess {
 }
 
 fn start_event_pump(inner:Arc<Mutex<ProcessInner>>,stdout:Option<std::process::ChildStdout>,stderr:Option<std::process::ChildStderr>){
+ let waiter_inner=inner.clone();
+ std::thread::spawn(move||{
+  let status=loop {
+   let result=match waiter_inner.lock(){
+    Ok(mut i)=>{
+     match i.child.as_mut(){
+      Some(child)=>child.try_wait(),
+      None=>return,
+     }
+    },
+    Err(_)=>return,
+   };
+   match result {
+    Ok(Some(status))=>break status,
+    Ok(None)=>std::thread::sleep(std::time::Duration::from_millis(50)),
+    Err(_)=>return,
+   }
+  };
+  if let Ok(mut i)=waiter_inner.lock(){
+   if !i.exited {
+    let code=status.code().unwrap_or(-1);
+    i.events.push_back(ProcessEvent::Exited(code));
+    i.exited=true;
+   }
+  }
+ });
+
  std::thread::spawn(move||{
   let mut handles=Vec::new();
   if let Some(out)=stdout{let shared=inner.clone();handles.push(std::thread::spawn(move||{for line in BufReader::new(out).lines().flatten(){if let Ok(mut i)=shared.lock(){i.events.push_back(ProcessEvent::Stdout(line));}}}));}
