@@ -55,3 +55,9 @@ impl From<crate::LaunchState> for LaunchStateDto {
 }
 
 pub const API_VERSION: u32 = 1;
+
+
+#[no_mangle]
+pub extern "C" fn native_engine_ready() -> i32 {
+    1
+}
