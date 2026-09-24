@@ -94,8 +94,12 @@ pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_native
     };
     let slot = engine_slot().lock().unwrap();
     let Some(engine) = slot.as_ref() else { return 0; };
-    match engine.instance_launch_config(&id) {
-        Ok(_) => 1,
+    let config = match engine.instance_launch_config(&id) {
+        Ok(config) => config,
+        Err(_) => return 0,
+    };
+    match a_launcher_core::engine::validate_instance_launch(&engine.storage, &config) {
+        Ok(()) => 1,
         Err(_) => 0,
     }
 }
