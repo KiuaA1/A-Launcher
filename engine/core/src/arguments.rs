@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 use serde_json::Value;
-use crate::{error::EngineError, launch::LaunchPlan, manifest::{Arguments, Rule}, plan::LaunchPreparation};
+use crate::{error::EngineError, launch::LaunchPlan, manifest::{Arguments, Rule}, plan::LaunchPreparation, platform::PlatformProfile};
 
 #[derive(Debug, Clone, Default)]
 pub struct LaunchContext {
     pub username:String,pub uuid:String,pub access_token:String,pub assets_root:String,pub asset_index:String,
     pub natives_directory:String,pub version_name:String,pub launcher_name:String,pub launcher_version:String,
     pub game_directory:String,pub classpath:String,pub feature_map:HashMap<String,bool>,
+    pub platform_os:String,pub platform_arch:String,
 }
 impl LaunchContext {
+    pub fn for_platform(profile:&PlatformProfile)->Self { Self { feature_map:profile.features.clone(), platform_os:profile.platform.os_name().into(), platform_arch:profile.platform.arch_name().into(), ..Self::default() } }
+
     pub fn substitute(&self,input:&str)->String {
         let mut out=input.to_string();
         for (k,v) in [("${auth_player_name}",&self.username),("${auth_uuid}",&self.uuid),("${auth_access_token}",&self.access_token),
@@ -20,8 +23,8 @@ impl LaunchContext {
 }
 fn rule_matches(rule:&Rule,ctx:&LaunchContext)->bool {
     if let Some(os)=&rule.os {
-        if let Some(name)=&os.name { let current=if cfg!(target_os="windows"){"windows"}else if cfg!(target_os="macos"){"osx"}else{"linux"}; if name!=current{return false;} }
-        if let Some(arch)=&os.arch { let current=if cfg!(target_arch="x86_64"){"x86_64"}else if cfg!(target_arch="aarch64"){"aarch64"}else if cfg!(target_arch="x86"){"x86"}else{"arm"}; if arch!=current{return false;} }
+        if let Some(name)=&os.name { let current=ctx.platform_os.as_str(); if name!=current{return false;} }
+        if let Some(arch)=&os.arch { let current=ctx.platform_arch.as_str(); if arch!=current{return false;} }
     }
     true
 }
