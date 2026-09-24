@@ -24,6 +24,7 @@ pub mod arguments;
 pub mod cache;
 pub mod classpath;
 pub mod download;
+pub mod engine;
 pub mod error;
 pub mod fs;
 pub mod instance;
