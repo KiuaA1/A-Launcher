@@ -12,7 +12,10 @@ impl JavaRuntime {
   if !self.executable.is_file(){return Err(EngineError::RuntimeUnavailable(format!("runtime executable does not exist: {}",self.executable.display())));}
   Ok(())
  }
- pub fn major_version(&self)->Option<u32>{self.version.split('.').next().and_then(|v|v.parse().ok())}
+ pub fn major_version(&self)->Option<u32>{
+  let first=self.version.split('.').next()?.parse::<u32>().ok()?;
+  if first==1 { self.version.split('.').nth(1)?.parse().ok() } else { Some(first) }
+}
  pub fn supports_major(&self,required:u32)->bool{self.major_version()==Some(required)}
 }
 
@@ -66,4 +69,11 @@ mod tests{
  use super::*;
  #[test]fn parses_java_versions(){assert_eq!(parse_java_version(r#"openjdk version "17.0.12" 2024-07-16"#),Some("17.0.12".into()));assert_eq!(parse_java_version(r#"java version "1.8.0_402""#),Some("1.8.0_402".into()));}
  #[test]fn registry_selects_required_major(){let mut r=RuntimeRegistry::default();let rt=JavaRuntime{id:"j17".into(),version:"17.0.12".into(),executable:PathBuf::from("/tmp/java")};r.runtimes.push(rt);assert_eq!(r.select_for_major(17).unwrap().id,"j17");}
+}
+#[cfg(test)]
+mod major_version_tests {
+ use super::*;
+ use std::path::PathBuf;
+ #[test] fn java_eight_uses_legacy_major(){let r=JavaRuntime{id:"j8".into(),version:"1.8.0_402".into(),executable:PathBuf::from("/tmp/java")};assert_eq!(r.major_version(),Some(8));}
+ #[test] fn modern_java_uses_first_component(){let r=JavaRuntime{id:"j21".into(),version:"21.0.8".into(),executable:PathBuf::from("/tmp/java")};assert_eq!(r.major_version(),Some(21));}
 }
