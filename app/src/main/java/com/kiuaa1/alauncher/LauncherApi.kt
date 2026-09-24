@@ -65,11 +65,11 @@ class NativeLauncherBridgeImpl(private val rootPath: String) : NativeLauncherBri
             if (nativeInit(rootPath) != 0) return LaunchStatus.Failed
             initialized = true
         }
-        return if (nativeLaunch(instanceId) == 1) LaunchStatus.Preparing else LaunchStatus.Failed
+        return if (nativeLaunch(instanceId, rootPath + "/runtimes/default/bin/java") == 1) LaunchStatus.Preparing else LaunchStatus.Failed
     }
 
     private external fun nativeInit(rootPath: String): Int
-    private external fun nativeLaunch(instanceId: String): Int
+    private external fun nativeLaunch(instanceId: String, javaExecutable: String): Int
 
     companion object {
         init { System.loadLibrary("a_launcher_android") }
