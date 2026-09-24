@@ -11,6 +11,7 @@ use crate::{
 pub struct ResolvedLaunchArtifacts {
     pub client_jar: MinecraftArtifact,
     pub libraries: Vec<MinecraftArtifact>,
+    pub native_libraries: Vec<MinecraftArtifact>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,6 +46,7 @@ impl LaunchPreparation {
             artifacts: ResolvedLaunchArtifacts {
                 client_jar: resolution.client_jar,
                 libraries: resolution.libraries,
+                native_libraries: resolution.native_libraries,
             },
             game_directory: game_directory.into(),
         })
