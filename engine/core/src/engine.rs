@@ -76,13 +76,12 @@ impl LauncherEngine {
 
  pub fn build_launch_plan(&self,instance_id:&str,version:&VersionJson,resolution:Resolution,runtime:&RuntimeManager,context:LaunchContext)->Result<LaunchPlan,EngineError>{
   let config=self.instances.load(instance_id)?;
+  validate_instance_launch(&self.storage, &config)?;
   if config.instance.minecraft_version!=version.id{return Err(EngineError::InvalidLaunchPlan("instance and version disagree".into()));}
   let prep0=LaunchPreparation::from_metadata(version,resolution.clone(),config.instance.game_directory.clone())?;
   let prep=LaunchPreparation{memory_mb:config.memory_mb,instance_jvm_args:config.jvm_args.clone(),instance_game_args:config.game_args.clone(),..prep0};
   let required=prep.java_major_version;
   let selected=runtime.select(required,config.java_runtime_id.as_deref())?;
-  let client_rel=prep.artifacts.client_jar.path.clone().or_else(||maven_path(&prep.artifacts.client_jar.id,prep.artifacts.client_jar.classifier.as_deref(),"jar").ok())
-   .ok_or_else(||EngineError::InvalidLaunchPlan("cannot derive client JAR path".into()))?;
   let client_path=self.storage.instance_game_dir(instance_id).join("client.jar");
   let classpath=build_classpath(&prep.artifacts.libraries,&prep.artifacts.client_jar,&self.storage.libraries,&client_path)?;
   let mut plan=prep.build_launch_plan(&selected.executable.to_string_lossy(),&classpath,version.arguments.as_ref(),version.minecraft_arguments.as_deref(),context)?;
@@ -134,4 +133,26 @@ impl LauncherEngine {
   }
   Ok(session)
  }
+}
+
+
+fn validate_instance_launch(storage:&StorageLayout,config:&InstanceConfig)->Result<(),EngineError>{
+ let game_dir=&config.instance.game_directory;
+ if !game_dir.is_dir(){
+  return Err(EngineError::InvalidLaunchPlan(format!("instance game directory is missing: {}",game_dir.display())));
+ }
+ if !game_dir.starts_with(storage.instance_dir(&config.instance.id)){
+  return Err(EngineError::InvalidLaunchPlan("instance game directory escapes instance storage".into()));
+ }
+ let client=game_dir.join("client.jar");
+ if !client.is_file(){
+  return Err(EngineError::InvalidLaunchPlan(format!("client JAR is missing: {}",client.display())));
+ }
+ if let Some(memory)=config.memory_mb{
+  if memory<256{return Err(EngineError::InvalidLaunchPlan("instance memory must be at least 256 MiB".into()));}
+ }
+ for arg in &config.jvm_args{
+  if arg.starts_with("-Xmx")||arg=="-jar"||arg=="--class-path"||arg.starts_with("--class-path=")||arg=="-cp"{continue;}
+ }
+ Ok(())
 }
