@@ -8,7 +8,7 @@ fn safe_entry(name: &str) -> Option<PathBuf> {
     if p.is_absolute() || p.components().any(|c| matches!(c,std::path::Component::ParentDir)) { None } else { Some(p.to_path_buf()) }
 }
 
-pub fn extract_native_jar(jar: &Path, destination: &Path) -> Result<usize, EngineError> {
+pub fn prepare_native_directory(destination: &Path) -> Result<(), EngineError> {\n    if destination.exists() {\n        std::fs::remove_dir_all(destination)\n            .map_err(|e| EngineError::DownloadFailed(format!("clear native directory: {e}")))?;\n    }\n    std::fs::create_dir_all(destination)\n        .map_err(|e| EngineError::DownloadFailed(format!("create native directory: {e}")))?;\n    Ok(())\n}\n\npub fn extract_native_jar(jar: &Path, destination: &Path) -> Result<usize, EngineError> {
     let file=File::open(jar).map_err(|e| EngineError::DownloadFailed(format!("open native JAR: {e}")))?;
     let mut archive=ZipArchive::new(file).map_err(|e| EngineError::DownloadFailed(format!("read native JAR: {e}")))?;
     std::fs::create_dir_all(destination).map_err(|e| EngineError::DownloadFailed(format!("create native directory: {e}")))?;
