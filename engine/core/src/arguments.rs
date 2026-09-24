@@ -18,7 +18,7 @@ impl LaunchContext {
         out
     }
 }
-fn rule_matches(rule:&Rule,_ctx:&LaunchContext)->bool {
+fn rule_matches(rule:&Rule,ctx:&LaunchContext)->bool {
     if let Some(os)=&rule.os {
         if let Some(name)=&os.name { let current=if cfg!(target_os="windows"){"windows"}else if cfg!(target_os="macos"){"osx"}else{"linux"}; if name!=current{return false;} }
         if let Some(arch)=&os.arch { let current=if cfg!(target_arch="x86_64"){"x86_64"}else if cfg!(target_arch="aarch64"){"aarch64"}else if cfg!(target_arch="x86"){"x86"}else{"arm"}; if arch!=current{return false;} }
