@@ -329,6 +329,118 @@ private fun CursorSlider(label: String, value: Float, suffix: String, onChange: 
 }
 
 @Composable
+fun InstancesReferenceScreen(api: LauncherApi) {
+    var instances by remember { mutableStateOf(api.listInstances()) }
+    var showCreate by remember { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 24.dp, end = 30.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Instances", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                    Text("Manage your Minecraft installations and profiles.", color = RefMuted)
+                }
+                Button(onClick = { showCreate = true }, shape = RoundedCornerShape(18.dp)) { Text("+  NEW INSTANCE") }
+            }
+            if (instances.isEmpty()) {
+                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = RefPanel), shape = RoundedCornerShape(24.dp)) {
+                    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Text("No instances yet", color = RefText, style = MaterialTheme.typography.headlineSmall)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Create an instance to start configuring Minecraft.", color = RefMuted)
+                        Spacer(Modifier.height(18.dp))
+                        Button(onClick = { showCreate = true }) { Text("CREATE INSTANCE") }
+                    }
+                }
+            } else {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    instances.forEach { instance ->
+                        Card(Modifier.fillMaxWidth().height(96.dp), colors = CardDefaults.cardColors(containerColor = RefPanel), shape = RoundedCornerShape(18.dp)) {
+                            Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF343841)), contentAlignment = Alignment.Center) {
+                                    Text(if (instance.loader == null) "▣" else "◇", color = RefText, style = MaterialTheme.typography.headlineSmall)
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(instance.name, color = RefText, style = MaterialTheme.typography.titleLarge)
+                                    Text("Minecraft " + instance.minecraftVersion + (instance.loader?.let { "  ·  " + it } ?: "  ·  Vanilla"), color = RefMuted)
+                                }
+                                OutlinedButton(onClick = {}) { Text("EDIT") }
+                                Spacer(Modifier.width(8.dp))
+                                Button(onClick = {}) { Text("PLAY") }
+                                Spacer(Modifier.width(8.dp))
+                                Text("⋮", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (showCreate) {
+            CreateInstanceReferenceDialog(
+                onDismiss = { showCreate = false },
+                onCreate = { id, name, version, loader ->
+                    api.createInstance(id, name, version, loader)
+                    instances = api.listInstances()
+                    showCreate = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreateInstanceReferenceDialog(
+    onDismiss: () -> Unit,
+    onCreate: (String, String, String, String?) -> Unit
+) {
+    var id by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var version by remember { mutableStateOf("1.21.8") }
+    var loader by remember { mutableStateOf("") }
+
+    ReferenceDialog(title = "New Instance", onDismiss = onDismiss) {
+        Text("INSTANCE IDENTITY", color = RefMuted, style = MaterialTheme.typography.labelSmall)
+        OutlinedTextField(id, { id = it }, label = { Text("Instance ID") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(name, { name = it }, label = { Text("Display name") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(version, { version = it }, label = { Text("Minecraft version") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(loader, { loader = it }, label = { Text("Loader (optional)") }, modifier = Modifier.fillMaxWidth())
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(onClick = onDismiss, Modifier.weight(1f)) { Text("CANCEL") }
+            Button(onClick = { if (id.isNotBlank() && name.isNotBlank() && version.isNotBlank()) onCreate(id.trim(), name.trim(), version.trim(), loader.trim().ifBlank { null }) }, Modifier.weight(1f)) { Text("CREATE") }
+        }
+    }
+}
+
+@Composable
+fun SettingsReferenceScreen() {
+    var page by remember { mutableStateOf("Game") }
+    Row(Modifier.fillMaxSize()) {
+        Column(Modifier.width(250.dp).fillMaxHeight().padding(start = 145.dp, top = 28.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text("Settings", color = RefText, style = MaterialTheme.typography.headlineMedium)
+            Text("A-Launcher", color = RefMuted)
+            Spacer(Modifier.height(10.dp))
+            listOf("Game", "Advanced", "Cursor Studio", "Skin Studio").forEach { item ->
+                val active = page == item
+                Card(onClick = { page = item }, Modifier.fillMaxWidth().height(54.dp), colors = CardDefaults.cardColors(containerColor = if (active) Color(0xFFE9ECF2) else Color.Transparent), shape = RoundedCornerShape(14.dp)) {
+                    Box(Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
+                        Text(item, color = if (active) Color(0xFF15171D) else RefText)
+                    }
+                }
+            }
+        }
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            when (page) {
+                "Game" -> GameReferenceScreen()
+                "Advanced" -> AdvancedReferenceScreen()
+                "Cursor Studio" -> CursorStudioReferenceScreen()
+                "Skin Studio" -> SkinStudioReferenceScreen()
+            }
+        }
+    }
+}
+
+@Composable
 fun BrowseResourcesReferenceScreen() {
     ReferencePage("Browse Resources", "Mods, resource packs and shaders for your instances.") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
