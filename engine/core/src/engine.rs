@@ -64,12 +64,18 @@ impl LauncherEngine {
 
  pub fn prepare_runtime(&self,instance_id:&str,resolution:&Resolution)->Result<(),EngineError>{
   self.storage.ensure_dirs().map_err(|e|EngineError::RuntimeUnavailable(format!("prepare storage: {e}")))?;
+  let native_dir=self.storage.natives.join(instance_id);
+  prepare_native_directory(&native_dir)?;
+  let mut extracted=0usize;
   for artifact in &resolution.native_libraries {
    let rel=artifact.path.clone().or_else(||maven_path(&artifact.id,artifact.classifier.as_deref(),"jar").ok())
     .ok_or_else(||EngineError::InvalidLaunchPlan(format!("cannot derive native path for {}",artifact.id)))?;
    let jar=self.storage.libraries.join(&rel);
    if !jar.is_file(){return Err(EngineError::DownloadFailed(format!("native JAR missing: {}",jar.display())));}
    extracted += extract_native_jar(&jar,&native_dir)?;
+  }
+  if !resolution.native_libraries.is_empty() && extracted==0 {
+   return Err(EngineError::DownloadFailed(format!("native preparation produced no native libraries: {}",native_dir.display())));
   }
   Ok(())
  }
