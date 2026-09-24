@@ -553,6 +553,8 @@ fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, 
     var version by remember { mutableStateOf("1.21") }
     var profileName by remember { mutableStateOf("Forge 1.21") }
     var customId by remember { mutableStateOf("forge-1-21") }
+    var loaderMenu by remember { mutableStateOf(false) }
+    var versionMenu by remember { mutableStateOf(false) }
 
     val loaderSubtitle = when (loader) {
         "Fabric" -> "0.16.14 · auto"
@@ -605,18 +607,58 @@ fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, 
                         }
                     }
                     Text("${loader.uppercase()} LOADER", color = RefMuted, style = MaterialTheme.typography.labelLarge)
-                    Surface(Modifier.fillMaxWidth(), color = Color(0xFF111217), shape = RoundedCornerShape(22.dp)) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(loaderSubtitle, color = RefText, style = MaterialTheme.typography.titleMedium)
-                            Spacer(Modifier.weight(1f)); Text("⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                    Box {
+                        Surface(
+                            Modifier.fillMaxWidth().clickable { loaderMenu = !loaderMenu },
+                            color = Color(0xFF111217),
+                            shape = RoundedCornerShape(22.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(loaderSubtitle, color = RefText, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.weight(1f)); Text(if (loaderMenu) "⌃" else "⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                        DropdownMenu(expanded = loaderMenu, onDismissRequest = { loaderMenu = false }) {
+                            listOf("Fabric", "Forge", "NeoForge", "Quilt", "OptiFine").forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(item) },
+                                    onClick = {
+                                        loader = item
+                                        profileName = item + " " + version
+                                        customId = item.lowercase() + "-" + version.replace(".", "-")
+                                        loaderMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
                     Text("MINECRAFT VERSION", color = RefText, style = MaterialTheme.typography.headlineSmall)
-                    Surface(Modifier.fillMaxWidth(), color = Color(0xFF111217), shape = RoundedCornerShape(22.dp)) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("▣", color = RefText, style = MaterialTheme.typography.titleLarge); Spacer(Modifier.width(14.dp))
-                            Text(version, color = RefText, style = MaterialTheme.typography.titleMedium); Spacer(Modifier.weight(1f))
-                            Text("⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                    Box {
+                        Surface(
+                            Modifier.fillMaxWidth().clickable { versionMenu = !versionMenu },
+                            color = Color(0xFF111217),
+                            shape = RoundedCornerShape(22.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("▣", color = RefText, style = MaterialTheme.typography.titleLarge)
+                                Spacer(Modifier.width(14.dp))
+                                Text(version, color = RefText, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.weight(1f))
+                                Text(if (versionMenu) "⌃" else "⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                        DropdownMenu(expanded = versionMenu, onDismissRequest = { versionMenu = false }) {
+                            listOf("26.3", "1.21.8", "1.21.4", "1.20.1", "1.19.4").forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(item) },
+                                    onClick = {
+                                        version = item
+                                        profileName = loader + " " + item
+                                        customId = loader.lowercase() + "-" + item.replace(".", "-")
+                                        versionMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
                     Text("Pick a loader build, then a compatible Minecraft version — the profile is created right here.", color = RefMuted)
