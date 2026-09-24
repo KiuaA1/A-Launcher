@@ -7,6 +7,8 @@ data class InstanceSummary(
     val loader: String?
 )
 
+enum class LaunchStatus { Idle, Preparing, Launching, Running, Failed }
+
 interface LauncherApi {
     fun listInstances(): List<InstanceSummary>
     fun createInstance(
@@ -16,6 +18,7 @@ interface LauncherApi {
         loader: String?
     ): InstanceSummary
     fun deleteInstance(id: String)
+    fun launch(instanceId: String): LaunchStatus
 }
 
 class LocalLauncherApi(private val native: NativeLauncherBridge = UnavailableNativeLauncherBridge()) : LauncherApi {
@@ -41,5 +44,10 @@ class LocalLauncherApi(private val native: NativeLauncherBridge = UnavailableNat
 
     override fun deleteInstance(id: String) {
         instances.remove(id)
+    }
+
+    override fun launch(instanceId: String): LaunchStatus {
+        check(instances.containsKey(instanceId)) { "Instance not found: $instanceId" }
+        return LaunchStatus.Preparing
     }
 }
