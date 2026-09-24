@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
 use a_launcher_core::engine::LauncherEngine;
+use a_launcher_core::{arguments::LaunchContext, download::ReqwestDownloadTransport, mojang::{MojangMetadataClient, MojangResolver}, platform::PlatformProfile, runtime::{JavaRuntime, RuntimeManager, RuntimeRegistry}};
 use jni::objects::{JClass, JString};
 use jni::sys::jstring;
 use jni::JNIEnv;
@@ -98,8 +99,38 @@ pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_native
         Ok(config) => config,
         Err(_) => return 0,
     };
-    match a_launcher_core::engine::validate_instance_launch(&engine.storage, &config) {
-        Ok(()) => 1,
-        Err(_) => 0,
+    if a_launcher_core::engine::validate_instance_launch(&engine.storage, &config).is_err() {
+        return 0;
     }
+    let java = match std::env::var("A_LAUNCHER_JAVA") {
+        Ok(value) if !value.is_empty() => value,
+        _ => return 0,
+    };
+    let transport = match ReqwestDownloadTransport::new() { Ok(value) => value, Err(_) => return 0 };
+    let metadata = MojangMetadataClient::new(transport);
+    let manifest_path = MojangMetadataClient::<ReqwestDownloadTransport>::cached_manifest_path(&engine.storage.cache);
+    if !manifest_path.exists() && metadata.download_manifest(&manifest_path).is_err() { return 0; }
+    let manifest = match std::fs::read_to_string(&manifest_path) { Ok(value) => value, Err(_) => return 0 };
+    let resolver = match MojangResolver::from_manifest_json(manifest) { Ok(value) => value, Err(_) => return 0 };
+    let resolution = match resolver.resolve_with_transport(
+        &config.instance.minecraft_version,
+        &metadata.transport,
+        &engine.storage.cache,
+        a_launcher_core::resolver::TargetPlatform::android_arm64(),
+    ) { Ok(value) => value, Err(_) => return 0 };
+    if engine.download_resolution(&id, &resolution, &metadata.transport).is_err() { return 0; }
+    if engine.prepare_runtime(&id, &resolution).is_err() { return 0; }
+    let version = match resolver.resolve_inheritance_chain(
+        &config.instance.minecraft_version,
+        &metadata.transport,
+        &engine.storage.cache,
+    ) { Ok(value) => value, Err(_) => return 0 };
+    let path = PathBuf::from(java);
+    let version_string = match a_launcher_core::runtime::probe_java_version(&path) { Ok(v) => v, Err(_) => return 0 };
+    let mut registry = RuntimeRegistry::default();
+    if registry.register(JavaRuntime { id: "android-selected".into(), version: version_string, executable: path }).is_err() { return 0; }
+    let runtime = RuntimeManager::new(registry);
+    let context = LaunchContext::for_platform(&PlatformProfile::android_arm64());
+    let plan = match engine.build_launch_plan(&id, &version, resolution, &runtime, context) { Ok(p) => p, Err(_) => return 0 };
+    match engine.launch(&id, &version.id, &plan) { Ok(()) => 3, Err(_) => 0 }
 }
