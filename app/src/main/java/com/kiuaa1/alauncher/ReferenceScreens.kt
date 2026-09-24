@@ -555,19 +555,144 @@ fun SettingsReferenceScreen() {
 
 @Composable
 fun BrowseResourcesReferenceScreen() {
-    ReferencePage("Browse Resources", "Mods, resource packs and shaders for your instances.") {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = {}) { Text("Mods", color = RefText) }
-            TextButton(onClick = {}) { Text("Resource Packs", color = RefMuted) }
-            TextButton(onClick = {}) { Text("Shaders", color = RefMuted) }
+    var tab by remember { mutableIntStateOf(0) }
+    var query by remember { mutableStateOf("") }
+    var sort by remember { mutableStateOf("Relevance") }
+    var filterOpen by remember { mutableStateOf(false) }
+    var installed by remember { mutableStateOf(setOf<String>()) }
+
+    val resources = listOf(
+        ResourceItem("Fabric API", "modmuss50", "Lightweight and modular API providing common hooks and intercompatibility measures utilized by mods using the Fabric toolchain.", "Fabric", "Library", "260M", "36K", "◈"),
+        ResourceItem("Sodium", "jellysquid3", "A high-performance rendering engine replacement for Minecraft, which greatly improves frame rates and reduces micro-stutter.", "Fabric", "NeoForge", "229M", "40K", "◆"),
+        ResourceItem("Lithium", "CaffeineMC", "No-compromises game logic optimization mod designed to make Minecraft run faster.", "Fabric", "Optimization", "120M", "28K", "◇"),
+        ResourceItem("Iris Shaders", "IrisShaders", "A modern shader loader compatible with existing OptiFine shader packs.", "Fabric", "Shaders", "85M", "19K", "✦")
+    )
+
+    val filtered = resources.filter {
+        query.isBlank() || it.title.contains(query, true) || it.author.contains(query, true) || it.tags.any { tag -> tag.contains(query, true) }
+    }
+
+    Box(Modifier.fillMaxSize().background(Color(0xFF101116))) {
+        Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 20.dp, end = 22.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(modifier = Modifier.size(62.dp), shape = RoundedCornerShape(31.dp), color = Color(0xFF0B0D12), onClick = {}) {
+                    Box(contentAlignment = Alignment.Center) { Text("←", color = RefText, style = MaterialTheme.typography.headlineMedium) }
+                }
+                Spacer(Modifier.width(16.dp))
+                Text("Browse Resources", color = RefText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(22.dp))
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.weight(1f).height(58.dp),
+                    singleLine = true,
+                    placeholder = { Text("Search mods...", color = Color(0xFF686D79)) },
+                    leadingIcon = { Text("⌕", color = RefMuted, style = MaterialTheme.typography.titleLarge) },
+                    shape = RoundedCornerShape(18.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF343740),
+                        unfocusedBorderColor = Color(0xFF292C33),
+                        focusedTextColor = RefText,
+                        unfocusedTextColor = RefText,
+                        cursorColor = RefText
+                    )
+                )
+                Spacer(Modifier.width(14.dp))
+                Surface(modifier = Modifier.size(62.dp), shape = RoundedCornerShape(31.dp), color = Color(0xFF0B0D12), onClick = { filterOpen = true }) {
+                    Box(contentAlignment = Alignment.Center) { Text("▼", color = RefText, style = MaterialTheme.typography.titleLarge) }
+                }
+            }
+
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                listOf("Mods", "Resource Packs", "Shaders").forEachIndexed { index, label ->
+                    TextButton(onClick = { tab = index }) {
+                        Text(label, color = if (tab == index) RefText else Color(0xFF737782), fontWeight = if (tab == index) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Surface(onClick = { sort = if (sort == "Relevance") "Downloads" else "Relevance" }, shape = RoundedCornerShape(18.dp), color = Color(0xFF171920)) {
+                    Text("Sort: $sort", color = Color(0xFFD5D7DE), modifier = Modifier.padding(horizontal = 18.dp, vertical = 9.dp))
+                }
+            }
+
+            HorizontalDivider(color = Color(0xFF292B32))
+
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                filtered.take(2).forEach { item ->
+                    ResourceReferenceCard(item, item.title in installed, Modifier.weight(1f)) { installed = installed + item.title }
+                }
+            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ResourceCard("Fabric API", "Lightweight and modular API providing common hooks.")
-            ResourceCard("Sodium", "High-performance rendering engine replacement.")
+
+        if (filterOpen) {
+            AlertDialog(
+                onDismissRequest = { filterOpen = false },
+                title = { Text("Filter resources") },
+                text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Minecraft version: 1.21.x"); Text("Loader: Fabric"); Text("Category: Optimization") } },
+                confirmButton = { TextButton(onClick = { filterOpen = false }) { Text("APPLY") } }
+            )
         }
     }
 }
 
+private data class ResourceItem(
+    val title: String,
+    val author: String,
+    val description: String,
+    val tag1: String,
+    val tag2: String,
+    val downloads: String,
+    val followers: String,
+    val icon: String
+) {
+    val tags: List<String> get() = listOf(tag1, tag2)
+}
+
+@Composable
+private fun ResourceReferenceCard(item: ResourceItem, installed: Boolean, modifier: Modifier = Modifier, onInstall: () -> Unit) {
+    Card(modifier = modifier.fillMaxHeight(), colors = CardDefaults.cardColors(containerColor = Color(0xFF15161B)), shape = RoundedCornerShape(26.dp)) {
+        Column {
+            Box(
+                Modifier.fillMaxWidth().height(210.dp).background(Brush.linearGradient(listOf(Color(0xFF3A392E), Color(0xFF22242C), Color(0xFF161923))))
+            ) {
+                Surface(modifier = Modifier.padding(14.dp), shape = RoundedCornerShape(20.dp), color = Color(0xCC0D0F14)) {
+                    Text("◉ SRC", color = Color(0xFF62E39A), modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                }
+                Row(Modifier.align(Alignment.TopEnd).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(shape = RoundedCornerShape(22.dp), color = Color(0xCC0D0F14)) { Text("↗", color = RefText, modifier = Modifier.padding(10.dp)) }
+                    Surface(shape = RoundedCornerShape(22.dp), color = Color(0xCC0D0F14)) { Text("♡", color = RefText, modifier = Modifier.padding(10.dp)) }
+                }
+                Box(Modifier.align(Alignment.BottomStart).padding(18.dp).size(78.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF11141A)), contentAlignment = Alignment.Center) {
+                    Text(item.icon, color = Color(0xFF74E89C), style = MaterialTheme.typography.headlineLarge)
+                }
+            }
+
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(item.title, color = RefText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("by  " + item.author, color = RefMuted, style = MaterialTheme.typography.bodyLarge)
+                Text(item.description, color = RefMuted, maxLines = 3, style = MaterialTheme.typography.bodyLarge)
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    item.tags.forEach { tag ->
+                        Surface(shape = RoundedCornerShape(9.dp), color = Color.Transparent, border = ButtonDefaults.outlinedButtonBorder) {
+                            Text(tag, color = RefMuted, modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("↓ " + item.downloads + " downloads", color = RefMuted, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.weight(1f))
+                    Text("♥ " + item.followers + " followers", color = RefMuted, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.width(14.dp))
+                    OutlinedButton(onClick = onInstall, shape = RoundedCornerShape(16.dp), border = ButtonDefaults.outlinedButtonBorder) {
+                        Text(if (installed) "INSTALLED" else "INSTALL")
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 fun AdvancedReferenceScreen() {
     var query by remember { mutableStateOf("") }
