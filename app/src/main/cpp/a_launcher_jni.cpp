@@ -1,5 +1,7 @@
 #include <jni.h>
 
+extern "C" int native_engine_ready() __attribute__((weak));
+
 extern "C"
 JNIEXPORT jint JNICALL
 Java_com_kiuaa1_alauncher_JniNativeLauncherBridge_nativeLaunch(
@@ -14,8 +16,7 @@ Java_com_kiuaa1_alauncher_JniNativeLauncherBridge_nativeLaunch(
         return 0;
     }
 
-    // Thin JNI boundary. The next native step replaces this stub with
-    // the Rust LauncherEngine request.
+    const int engineReady = native_engine_ready ? native_engine_ready() : 0;
     env->ReleaseStringUTFChars(instance_id, raw);
-    return 1; // Preparing
+    return engineReady ? 1 : 0; // Preparing only when Rust is linked
 }
