@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use crate::error::EngineError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -9,6 +10,8 @@ pub struct LaunchPlan {
     pub classpath: Vec<String>,
     pub jvm_args: Vec<String>,
     pub game_args: Vec<String>,
+    #[serde(default)]
+    pub environment: HashMap<String, String>,
 }
 
 impl LaunchPlan {
