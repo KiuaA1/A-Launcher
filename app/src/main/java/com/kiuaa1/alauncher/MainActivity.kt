@@ -49,7 +49,7 @@ private fun LauncherShell(api: LauncherApi) {
                 onSelectInstance = { selectedInstance = it },
                 onInstances = { selected = 1 }
             )
-            1 -> InstancesScreen(api)
+            1 -> CursorStudioReferenceScreen()
             2 -> AccountsReferenceScreen()
             3 -> BrowseResourcesReferenceScreen()
             4 -> AdvancedReferenceScreen()
@@ -340,7 +340,7 @@ private fun ReferenceSidebar(selected: Int, onSelect: (Int) -> Unit, modifier: M
             Box(
                 Modifier.size(70.dp).clip(RoundedCornerShape(35.dp))
                     .background(if (active) Color(0x331F2532) else Color.Transparent)
-                    .clickable { onSelect(index.coerceAtMost(3)) },
+                    .clickable { onSelect(index.coerceAtMost(4)) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(icon, color = if (active) Color.White else Muted, style = MaterialTheme.typography.headlineSmall)
