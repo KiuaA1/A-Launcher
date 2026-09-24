@@ -5,37 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlin.math.sin
 
-private val destinations = listOf("Home", "Instances", "Store", "Settings")
+private val destinations = listOf("Home", "Instances", "Store", "About", "Settings")
+
+private val Space = Color(0xFF02030A)
+private val Glass = Color(0xC8171B27)
+private val GlassStrong = Color(0xE31A1E2A)
+private val Muted = Color(0xFFB9BDC8)
 
 class MainActivity : ComponentActivity() {
     private val launcherApi: LauncherApi = LocalLauncherApi()
@@ -60,18 +39,20 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun LauncherShell(api: LauncherApi) {
     var selected by remember { mutableIntStateOf(0) }
+    var selectedInstance by remember { mutableStateOf("Minecraft...") }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF02030B))) {
+    Box(Modifier.fillMaxSize().background(Space)) {
         when (selected) {
             0 -> HomeScreen(
-                onInstances = { selected = 1 },
-                onLaunch = { },
+                selectedInstance = selectedInstance,
+                onSelectInstance = { selectedInstance = it },
+                onInstances = { selected = 1 }
             )
             1 -> InstancesScreen(api)
             else -> PlaceholderScreen(destinations[selected])
         }
 
-        Sidebar(
+        ReferenceSidebar(
             selected = selected,
             onSelect = { selected = it },
             modifier = Modifier.align(Alignment.CenterStart)
@@ -81,145 +62,196 @@ private fun LauncherShell(api: LauncherApi) {
 
 @Composable
 private fun HomeScreen(
-    onInstances: () -> Unit,
-    onLaunch: () -> Unit,
+    selectedInstance: String,
+    onSelectInstance: (String) -> Unit,
+    onInstances: () -> Unit
 ) {
-    val stars = remember {
-        List(90) { index ->
-            val x = ((index * 83) % 997) / 997f
-            val y = ((index * 47 + 13) % 613) / 613f
-            val radius = 0.7f + ((index * 17) % 10) / 8f
-            Triple(x, y, radius)
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawRect(
-                brush = Brush.verticalGradient(
-                    listOf(Color(0xFF01020A), Color(0xFF05091A), Color(0xFF02030B))
-                )
-            )
-            stars.forEachIndexed { index, (x, y, radius) ->
-                val twinkle = 0.45f + 0.45f * sin(index.toFloat())
-                drawCircle(
-                    color = Color.White.copy(alpha = twinkle),
-                    radius = radius,
-                    center = Offset(size.width * x, size.height * y)
-                )
-            }
-        }
+    Box(Modifier.fillMaxSize()) {
+        Starfield()
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(start = 132.dp, end = 30.dp, top = 20.dp, bottom = 20.dp),
+            Modifier.fillMaxSize().padding(start = 145.dp, end = 30.dp, top = 20.dp, bottom = 22.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            HomeTopBar()
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                AvatarPreview()
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = onLaunch,
-                    modifier = Modifier.width(310.dp).height(74.dp),
-                    shape = RoundedCornerShape(38.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF090A0F)
-                    )
-                ) {
-                    Text("▶  LAUNCH", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                }
-                Spacer(Modifier.height(12.dp))
-                StatusPill()
+            ReferenceTopBar()
+
+            Column(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                PixelAvatar()
+                Spacer(Modifier.height(2.dp))
+                LaunchButton()
+                Spacer(Modifier.height(13.dp))
+                RuntimePill()
             }
-            InstanceStrip(onInstances)
+
+            InstanceRail(
+                selected = selectedInstance,
+                onSelect = onSelectInstance,
+                onInstances = onInstances
+            )
         }
     }
 }
 
 @Composable
-private fun HomeTopBar() {
+private fun Starfield() {
+    val stars = remember {
+        List(150) { i ->
+            Triple(
+                ((i * 71 + 17) % 1000) / 1000f,
+                ((i * 137 + 31) % 1000) / 1000f,
+                0.5f + ((i * 13) % 12) / 7f
+            )
+        }
+    }
+    Canvas(Modifier.fillMaxSize()) {
+        drawRect(
+            Brush.verticalGradient(
+                listOf(Color(0xFF010208), Color(0xFF070B1B), Color(0xFF010209))
+            )
+        )
+        stars.forEachIndexed { i, (x, y, r) ->
+            drawCircle(
+                Color.White.copy(alpha = .32f + .38f * ((sin(i.toFloat()) + 1f) / 2f)),
+                r,
+                Offset(size.width * x, size.height * y)
+            )
+        }
+        // Soft Milky-Way-like band.
+        drawCircle(
+            Color(0x331C294F),
+            size.maxDimension * .62f,
+            Offset(size.width * .53f, size.height * .72f)
+        )
+    }
+}
+
+@Composable
+private fun ReferenceTopBar() {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(58.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF08090F))
+                Modifier.size(58.dp).clip(RoundedCornerShape(17.dp)).background(Color(0xFF090A10)),
+                contentAlignment = Alignment.Center
             ) {
-                Text("A", modifier = Modifier.align(Alignment.Center), color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineLarge)
+                Text("A", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineLarge)
             }
             Spacer(Modifier.width(14.dp))
-            Text("A launcher", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+            Text("A launcher", color = Color.White, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.headlineMedium)
         }
 
         Row(
-            modifier = Modifier.clip(RoundedCornerShape(32.dp)).background(Color(0xCC161923)).padding(horizontal = 14.dp, vertical = 9.dp),
+            Modifier.clip(RoundedCornerShape(30.dp)).background(Glass).padding(horizontal = 13.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFBFC2C7))) {
-                Text("■", modifier = Modifier.align(Alignment.Center), color = Color(0xFF73767D))
+            Box(Modifier.size(42.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFFC8CBD0)), contentAlignment = Alignment.Center) {
+                Text("■", color = Color(0xFF737780))
             }
             Spacer(Modifier.width(12.dp))
             Text("kiua", color = Color.White, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.width(10.dp))
-            Text("LOCAL", color = Color.White, modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(Color.Black.copy(alpha = .6f)).padding(horizontal = 12.dp, vertical = 5.dp))
+            Text(
+                "LOCAL",
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black.copy(alpha = .62f)).padding(horizontal = 12.dp, vertical = 6.dp)
+            )
             Spacer(Modifier.width(8.dp))
-            Text("⌄", color = Color.White)
+            Text("⌄", color = Color.White, style = MaterialTheme.typography.titleLarge)
         }
     }
 }
 
 @Composable
-private fun AvatarPreview() {
-    Box(modifier = Modifier.height(250.dp).width(180.dp), contentAlignment = Alignment.BottomCenter) {
-        Text("kiua", modifier = Modifier.offset(y = (-205).dp).clip(RoundedCornerShape(8.dp)).background(Color(0xDD161923)).padding(horizontal = 14.dp, vertical = 6.dp), color = Color.White)
+private fun PixelAvatar() {
+    Box(Modifier.width(190.dp).height(285.dp), contentAlignment = Alignment.BottomCenter) {
+        Text(
+            "kiua",
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
+                .offset(y = (-242).dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xE41A1E29))
+                .padding(horizontal = 15.dp, vertical = 7.dp)
+        )
+
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(modifier = Modifier.size(62.dp).background(Color(0xFFB8BDC4))) {
-                Text("::", modifier = Modifier.align(Alignment.Center), color = Color(0xFF4B5058), fontWeight = FontWeight.Bold)
+            Box(Modifier.size(70.dp).background(Color(0xFFBFC2C7)), contentAlignment = Alignment.Center) {
+                Text("••", color = Color(0xFF50545C), fontWeight = FontWeight.Bold)
             }
             Row {
-                Box(modifier = Modifier.size(42.dp, 76.dp).background(Color(0xFFB51B17)))
-                Box(modifier = Modifier.size(42.dp, 76.dp).background(Color(0xFF263B72)))
+                Box(Modifier.size(35.dp, 78.dp).background(Color(0xFFC41C19)))
+                Box(Modifier.size(35.dp, 78.dp).background(Color(0xFF233E78)))
             }
             Row {
-                Box(modifier = Modifier.size(42.dp, 76.dp).background(Color(0xFF101C32)))
-                Box(modifier = Modifier.size(42.dp, 76.dp).background(Color(0xFF101C32)))
+                Box(Modifier.size(35.dp, 76.dp).background(Color(0xFF101B31)))
+                Box(Modifier.size(35.dp, 76.dp).background(Color(0xFF101B31)))
             }
         }
     }
 }
 
 @Composable
-private fun StatusPill() {
-    Row(
-        modifier = Modifier.clip(RoundedCornerShape(28.dp)).background(Color(0xAA171A24)).padding(horizontal = 18.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun LaunchButton() {
+    Button(
+        onClick = { },
+        modifier = Modifier.width(310.dp).height(76.dp),
+        shape = RoundedCornerShape(40.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF08090E)),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp)
     ) {
-        Text("▣  Java 25", color = Color.White)
-        Text("  •  ", color = Color(0xFF8D929E))
-        Text("⚙  2304 MB RAM", color = Color.White)
+        Text("▶", style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.width(14.dp))
+        Text("LAUNCH", fontWeight = FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp), style = MaterialTheme.typography.titleLarge)
     }
 }
 
 @Composable
-private fun InstanceStrip(onInstances: () -> Unit) {
+private fun RuntimePill() {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.clip(RoundedCornerShape(22.dp)).background(Color(0xB91A1E29)).padding(horizontal = 20.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        InstanceCard("Minecraft...", "▣", onInstances)
-        InstanceCard("Fabric 26.3", "◇", onInstances)
-        InstanceCard("Fabric 26.3", "◇", onInstances)
+        Text("▣", color = Color.White)
+        Spacer(Modifier.width(8.dp))
+        Text("Java 25", color = Color.White)
+        Text("  •  ", color = Muted)
+        Text("⚙", color = Color.White)
+        Spacer(Modifier.width(7.dp))
+        Text("2304 MB RAM", color = Color.White)
+    }
+}
+
+@Composable
+private fun InstanceRail(
+    selected: String,
+    onSelect: (String) -> Unit,
+    onInstances: () -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        HomeInstanceCard("Minecraft...", "▣", selected == "Minecraft...", { onSelect("Minecraft...") }, onInstances)
+        HomeInstanceCard("Fabric 26.3", "◇", selected == "Fabric 26.3-A", { onSelect("Fabric 26.3-A") }, onInstances)
+        HomeInstanceCard("Fabric 26.3", "◇", selected == "Fabric 26.3-B", { onSelect("Fabric 26.3-B") }, onInstances)
         Card(
             onClick = onInstances,
-            modifier = Modifier.width(230.dp).height(82.dp),
-            shape = RoundedCornerShape(42.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0x99131822)),
+            modifier = Modifier.width(238.dp).height(84.dp),
+            shape = RoundedCornerShape(43.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0x9B121722))
         ) {
-            Row(modifier = Modifier.fillMaxSize().padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxSize().padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("+", color = Color.White, style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.width(12.dp))
                 Text("New Instance", color = Color.White, style = MaterialTheme.typography.titleMedium)
@@ -229,34 +261,56 @@ private fun InstanceStrip(onInstances: () -> Unit) {
 }
 
 @Composable
-private fun InstanceCard(name: String, icon: String, onClick: () -> Unit) {
+private fun HomeInstanceCard(
+    name: String,
+    icon: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    onInstances: () -> Unit
+) {
     Card(
-        onClick = onClick,
-        modifier = Modifier.width(230.dp).height(82.dp),
-        shape = RoundedCornerShape(42.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0x99131822))
+        onClick = onSelect,
+        modifier = Modifier.width(238.dp).height(84.dp),
+        shape = RoundedCornerShape(43.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) Color(0xB21A1E2A) else Color(0x91131822)
+        )
     ) {
-        Row(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(icon, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+        Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(5.dp).fillMaxHeight(.62f).clip(RoundedCornerShape(4.dp)).background(if (selected) Color.White else Color.Transparent))
+            Spacer(Modifier.width(9.dp))
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFF383C43)), contentAlignment = Alignment.Center) {
+                Text(icon, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+            }
             Spacer(Modifier.width(12.dp))
-            Text(name, color = Color.White, modifier = Modifier.weight(1f))
-            Text("▶", color = Color.White)
-            Spacer(Modifier.width(12.dp))
-            Text("⋮", color = Color.White)
+            Text(name, color = Color.White, modifier = Modifier.weight(1f), maxLines = 1)
+            IconButton(onClick = onInstances) { Text("⋮", color = Muted, style = MaterialTheme.typography.titleLarge) }
         }
     }
 }
 
 @Composable
-private fun Sidebar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+private fun ReferenceSidebar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.padding(start = 34.dp).width(88.dp).clip(RoundedCornerShape(42.dp)).background(Color(0xCC171B26)).padding(vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier
+            .padding(start = 34.dp)
+            .width(88.dp)
+            .clip(RoundedCornerShape(42.dp))
+            .background(Color(0xD5161A25))
+            .padding(vertical = 11.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        listOf("⌂", "➤", "▣", "ⓘ", "☷").forEachIndexed { index, icon ->
-            IconButton(onClick = { onSelect(if (index == 0) 0 else if (index == 1) 1 else index.coerceAtMost(3)) }) {
-                Text(icon, color = if (selected == index) Color.White else Color(0xFFB8BDC7), style = MaterialTheme.typography.headlineSmall)
+        val icons = listOf("⌂", "➤", "▣", "ⓘ", "☷")
+        icons.forEachIndexed { index, icon ->
+            val active = selected == index
+            Box(
+                Modifier.size(70.dp).clip(RoundedCornerShape(35.dp))
+                    .background(if (active) Color(0x331F2532) else Color.Transparent)
+                    .clickable { onSelect(index.coerceAtMost(3)) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, color = if (active) Color.White else Muted, style = MaterialTheme.typography.headlineSmall)
             }
         }
     }
@@ -265,20 +319,19 @@ private fun Sidebar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier =
 @Composable
 private fun InstancesScreen(api: LauncherApi) {
     var instances by remember { mutableStateOf(api.listInstances()) }
-    var showCreate by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize().padding(start = 132.dp, top = 24.dp, end = 30.dp)) {
-        Text("Instances", style = MaterialTheme.typography.headlineMedium, color = Color.White)
-        Spacer(Modifier.height(16.dp))
-        if (showCreate) Text("Create flow coming next.", color = Color.White)
-        Button(onClick = { showCreate = true }) { Text("New Instance") }
-        instances.forEach { Text(it.name + " • Minecraft " + it.minecraftVersion, color = Color.White) }
+    Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 30.dp, end = 30.dp)) {
+        Text("Instances", color = Color.White, style = MaterialTheme.typography.headlineLarge)
+        Spacer(Modifier.height(18.dp))
+        Button(onClick = { }) { Text("New Instance") }
+        Spacer(Modifier.height(14.dp))
+        instances.forEach { Text(it.name + "  •  Minecraft " + it.minecraftVersion, color = Color.White) }
     }
 }
 
 @Composable
 private fun PlaceholderScreen(title: String) {
-    Column(modifier = Modifier.fillMaxSize().padding(start = 132.dp, top = 24.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineMedium, color = Color.White)
-        Text("This section is coming next.", color = Color.White)
+    Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 30.dp)) {
+        Text(title, color = Color.White, style = MaterialTheme.typography.headlineLarge)
+        Text("This section is coming next.", color = Muted)
     }
 }
