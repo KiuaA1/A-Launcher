@@ -34,6 +34,7 @@ pub mod manifest;
 pub mod mojang;
 pub mod native;
 pub mod plan;
+pub mod platform;
 pub mod process;
 pub mod resolver;
 pub mod session;
