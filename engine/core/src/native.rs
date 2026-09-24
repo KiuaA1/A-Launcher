@@ -3,7 +3,8 @@ use zip::ZipArchive;
 use crate::{error::EngineError, resolver::{maven_path, MinecraftArtifact}};
 
 fn safe_entry(name: &str) -> Option<PathBuf> {
-    let p=Path::new(name);
+    let normalized = name.replace('\\\\', "/");
+    let p=Path::new(&normalized);
     if p.is_absolute() || p.components().any(|c| matches!(c,std::path::Component::ParentDir)) { None } else { Some(p.to_path_buf()) }
 }
 
@@ -22,8 +23,20 @@ pub fn extract_native_jar(jar: &Path, destination: &Path) -> Result<usize, Engin
         let filename=match rel.file_name().and_then(|n|n.to_str()) { Some(n)=>n, None=>continue };
         if filename.is_empty() { continue; }
         let out=destination.join(rel);
-        if out.exists() { return Err(EngineError::DownloadFailed(format!("native extraction collision: {}", out.display()))); }
-        if let Some(parent)=out.parent(){std::fs::create_dir_all(parent).map_err(|e|EngineError::DownloadFailed(e.to_string()))?;}
+        if out.exists() {
+            return Err(EngineError::DownloadFailed(format!("native extraction collision: {}", out.display())));
+        }
+        let root = std::fs::canonicalize(destination)
+            .map_err(|e| EngineError::DownloadFailed(format!("resolve native destination: {e}")))?;
+        if let Some(parent) = out.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| EngineError::DownloadFailed(e.to_string()))?;
+            let parent_resolved = std::fs::canonicalize(parent)
+                .map_err(|e| EngineError::DownloadFailed(format!("resolve native parent: {e}")))?;
+            if !parent_resolved.starts_with(&root) {
+                return Err(EngineError::DownloadFailed("native extraction escaped destination".into()));
+            }
+        }
         let mut f=File::create(&out).map_err(|e|EngineError::DownloadFailed(e.to_string()))?;
         io::copy(&mut entry,&mut f).map_err(|e|EngineError::DownloadFailed(e.to_string()))?;
         count+=1;
