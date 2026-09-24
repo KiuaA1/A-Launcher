@@ -44,6 +44,7 @@ private fun LauncherShell(api: LauncherApi) {
     Box(Modifier.fillMaxSize().background(Space)) {
         when (selected) {
             0 -> HomeScreen(
+                instances = api.listInstances(),
                 selectedInstance = selectedInstance,
                 onSelectInstance = { selectedInstance = it },
                 onInstances = { selected = 1 }
@@ -62,6 +63,7 @@ private fun LauncherShell(api: LauncherApi) {
 
 @Composable
 private fun HomeScreen(
+    instances: List<InstanceSummary>,
     selectedInstance: String,
     onSelectInstance: (String) -> Unit,
     onInstances: () -> Unit
@@ -88,6 +90,7 @@ private fun HomeScreen(
             }
 
             InstanceRail(
+                instances = instances,
                 selected = selectedInstance,
                 onSelect = onSelectInstance,
                 onInstances = onInstances
@@ -233,6 +236,7 @@ private fun RuntimePill() {
 
 @Composable
 private fun InstanceRail(
+    instances: List<InstanceSummary>,
     selected: String,
     onSelect: (String) -> Unit,
     onInstances: () -> Unit
@@ -242,9 +246,32 @@ private fun InstanceRail(
         horizontalArrangement = Arrangement.spacedBy(13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        HomeInstanceCard("Minecraft...", "▣", selected == "Minecraft...", { onSelect("Minecraft...") }, onInstances)
-        HomeInstanceCard("Fabric 26.3", "◇", selected == "Fabric 26.3-A", { onSelect("Fabric 26.3-A") }, onInstances)
-        HomeInstanceCard("Fabric 26.3", "◇", selected == "Fabric 26.3-B", { onSelect("Fabric 26.3-B") }, onInstances)
+        instances.take(3).forEach { instance ->
+            HomeInstanceCard(
+                name = instance.name,
+                subtitle = "Minecraft " + instance.minecraftVersion,
+                icon = if (instance.loader == null) "▣" else "◇",
+                selected = selected == instance.id,
+                onSelect = { onSelect(instance.id) },
+                onInstances = onInstances
+            )
+        }
+
+        if (instances.isEmpty()) {
+            Card(
+                onClick = onInstances,
+                modifier = Modifier.width(360.dp).height(84.dp),
+                shape = RoundedCornerShape(43.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0x91131822))
+            ) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("No instances", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Create your first one", color = Muted)
+                }
+            }
+        }
+
         Card(
             onClick = onInstances,
             modifier = Modifier.width(238.dp).height(84.dp),
@@ -259,10 +286,10 @@ private fun InstanceRail(
         }
     }
 }
-
 @Composable
 private fun HomeInstanceCard(
     name: String,
+    subtitle: String,
     icon: String,
     selected: Boolean,
     onSelect: () -> Unit,
@@ -283,7 +310,10 @@ private fun HomeInstanceCard(
                 Text(icon, color = Color.White, style = MaterialTheme.typography.headlineSmall)
             }
             Spacer(Modifier.width(12.dp))
-            Text(name, color = Color.White, modifier = Modifier.weight(1f), maxLines = 1)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, color = Color.White, maxLines = 1)
+                Text(subtitle, color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            }
             IconButton(onClick = onInstances) { Text("⋮", color = Muted, style = MaterialTheme.typography.titleLarge) }
         }
     }
