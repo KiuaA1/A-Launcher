@@ -18,12 +18,219 @@ private val RefAccent = Color(0xFF7C4DFF)
 
 @Composable
 fun AccountsReferenceScreen() {
-    ReferencePage("Who is playing?", "Pick who this launcher should identify you as. You can add accounts, switch between them, or continue locally.") {
-        ReferenceRow("Microsoft account", "Premium • Full online play", "2")
-        ReferenceRow("ely.by account", "Free • skins & capes, enabled servers", "2")
-        ReferenceRow("Local profile", "Offline • pick any name, no password", "3")
-        Spacer(Modifier.height(12.dp))
-        Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = RefAccent)) { Text("Add account") }
+    var showPicker by remember { mutableStateOf(false) }
+    var showLocal by remember { mutableStateOf(false) }
+    var showMicrosoft by remember { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxSize().padding(start = 145.dp, top = 30.dp, end = 30.dp, bottom = 30.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp)
+        ) {
+            Card(
+                modifier = Modifier.weight(.9f).fillMaxHeight(.72f),
+                colors = CardDefaults.cardColors(containerColor = Color(0xE914151B)),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(Modifier.padding(34.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("ID  ·  SIGN IN", color = RefMuted, style = MaterialTheme.typography.labelLarge)
+                    Text("Who is playing?", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                    Text(
+                        "Pick how this launcher should identify you. You can add more accounts later from the account switcher.",
+                        color = RefMuted,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    HorizontalDivider(color = Color(0x332F3440))
+                    Text("•  Microsoft   — servers · skins · capes", color = RefMuted)
+                    Text("•  ely.by       — free skins · many servers", color = RefMuted)
+                    Text("○  Local        — offline / LAN only", color = RefMuted)
+                }
+            }
+
+            Column(
+                Modifier.weight(1.1f).fillMaxHeight(.72f),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                AccountOption(
+                    title = "Microsoft account",
+                    subtitle = "Premium · full online play",
+                    badge = "1",
+                    selected = true,
+                    onClick = { showMicrosoft = true }
+                )
+                AccountOption(
+                    title = "ely.by account",
+                    subtitle = "Free · skins & capes, ely-enabled servers",
+                    badge = "2",
+                    selected = false,
+                    onClick = { showPicker = true }
+                )
+                AccountOption(
+                    title = "Local profile",
+                    subtitle = "Offline · pick any name, no password",
+                    badge = "3",
+                    selected = false,
+                    onClick = { showLocal = true }
+                )
+                Text(
+                    "// credentials go straight to the provider — the launcher never sees your password",
+                    color = Color(0xFF5F6470),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
+        if (showPicker) {
+            ReferenceDialog(
+                title = "Who is playing?",
+                onDismiss = { showPicker = false }
+            ) {
+                AddAccountCard { showPicker = false }
+                AccountListRow("kiua", "LOCAL · ACTIVE SKIN SLOT 1", true)
+            }
+        }
+
+        if (showLocal) {
+            ReferenceDialog(
+                title = "Mint a local profile",
+                onDismiss = { showLocal = false }
+            ) {
+                Text("Type the name other players will see. Nothing leaves your device.", color = RefMuted)
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    placeholder = { Text(">_ player_name", color = Color(0xFF5C606A)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                Text("○  3 – 16 characters", color = RefMuted)
+                Text("○  letters, numbers, underscore", color = RefMuted)
+                Text("○  not already on this launcher", color = RefMuted)
+                Button(
+                    onClick = { showLocal = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF284F7E))
+                ) { Text("MINT PROFILE") }
+            }
+        }
+
+        if (showMicrosoft) {
+            ReferenceDialog(
+                title = "Sign in",
+                onDismiss = { showMicrosoft = false }
+            ) {
+                Text("Microsoft", color = RefText, style = MaterialTheme.typography.headlineMedium)
+                Text("to continue to Minecraft.", color = RefMuted)
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    label = { Text("Email or phone number") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4C8E32))
+                ) { Text("Next") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountOption(
+    title: String,
+    subtitle: String,
+    badge: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(96.dp),
+        colors = CardDefaults.cardColors(containerColor = if (selected) Color(0xFFE9ECF2) else RefPanel),
+        shape = RoundedCornerShape(22.dp)
+    ) {
+        Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(58.dp).clip(RoundedCornerShape(16.dp)).background(if (selected) Color(0xFF111217) else Color(0xFF090A0F)),
+                contentAlignment = Alignment.Center
+            ) { Text(if (title.startsWith("Microsoft")) "▦" else if (title.startsWith("ely")) "◇" else "♟", color = if (selected) Color.White else Color(0xFFAFA5FF)) }
+            Spacer(Modifier.width(18.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, color = if (selected) Color(0xFF17191F) else RefText, style = MaterialTheme.typography.titleLarge)
+                Text(subtitle, color = if (selected) Color(0xFF565A64) else RefMuted)
+            }
+            Text("$badge  →", color = if (selected) Color(0xFF17191F) else RefText)
+        }
+    }
+}
+
+@Composable
+private fun ReferenceDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Box(
+        Modifier.fillMaxSize().background(Color(0x99000000)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.widthIn(min = 620.dp, max = 920.dp).padding(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xF018191F)),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, color = RefText, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                    TextButton(onClick = onDismiss) { Text("×", color = RefText, style = MaterialTheme.typography.headlineMedium) }
+                }
+                HorizontalDivider(color = Color(0x332F3440))
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddAccountCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(94.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0x201F222A)),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("+", color = RefText, style = MaterialTheme.typography.displaySmall)
+            Spacer(Modifier.width(18.dp))
+            Column {
+                Text("Add account", color = RefText, style = MaterialTheme.typography.titleLarge)
+                Text("CREATE OR SIGN IN", color = RefMuted, style = MaterialTheme.typography.labelMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountListRow(name: String, subtitle: String, active: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth().height(94.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1D2028)),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Row(Modifier.fillMaxSize().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(58.dp).clip(RoundedCornerShape(15.dp)).background(Color(0xFF111319)), contentAlignment = Alignment.Center) {
+                Text("■", color = Color(0xFFC7CBD2))
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(name, color = RefText, style = MaterialTheme.typography.titleLarge)
+                Text(subtitle, color = RefMuted, style = MaterialTheme.typography.labelMedium)
+            }
+            if (active) Text("✓", color = RefText, style = MaterialTheme.typography.headlineSmall)
+            Text("⌫", color = RefMuted, modifier = Modifier.padding(start = 18.dp))
+        }
     }
 }
 
