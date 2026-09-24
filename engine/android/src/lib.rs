@@ -57,7 +57,8 @@ pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_native
     _class: JClass,
 ) -> jstring {
     let result = {
-        let slot = engine_slot().lock().unwrap();
+        let java = match jstring_value(&mut env, java_executable) { Ok(v) => v, Err(_) => return 0 };
+    let slot = engine_slot().lock().unwrap();
         match slot.as_ref() {
             Some(engine) => match engine.list_instances() {
                 Ok(instances) => serde_json::to_string(
@@ -88,6 +89,7 @@ pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_native
     mut env: JNIEnv,
     _class: JClass,
     instance_id: JString,
+    java_executable: JString,
 ) -> jni::sys::jint {
     let id = match jstring_value(&mut env, instance_id) {
         Ok(v) => v,
