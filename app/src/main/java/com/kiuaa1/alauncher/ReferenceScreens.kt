@@ -2,6 +2,8 @@ package com.kiuaa1.alauncher
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 private val RefPanel = Color(0xD9161A24)
 private val RefPanel2 = Color(0xB9161A24)
@@ -633,33 +637,30 @@ fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, 
                         }
                     }
                     Text("MINECRAFT VERSION", color = RefText, style = MaterialTheme.typography.headlineSmall)
-                    Box {
-                        Surface(
-                            Modifier.fillMaxWidth().clickable { versionMenu = !versionMenu },
-                            color = Color(0xFF111217),
-                            shape = RoundedCornerShape(22.dp)
-                        ) {
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text("▣", color = RefText, style = MaterialTheme.typography.titleLarge)
-                                Spacer(Modifier.width(14.dp))
-                                Text(version, color = RefText, style = MaterialTheme.typography.titleMedium)
-                                Spacer(Modifier.weight(1f))
-                                Text(if (versionMenu) "⌃" else "⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
-                            }
+                    Surface(
+                        Modifier.fillMaxWidth().clickable { versionMenu = true },
+                        color = Color(0xFF111217),
+                        shape = RoundedCornerShape(22.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("▣", color = RefText, style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.width(14.dp))
+                            Text(version, color = RefText, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.weight(1f))
+                            Text("⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
                         }
-                        DropdownMenu(expanded = versionMenu, onDismissRequest = { versionMenu = false }) {
-                            listOf("26.3", "1.21.8", "1.21.4", "1.20.1", "1.19.4").forEach { item ->
-                                DropdownMenuItem(
-                                    text = { Text(item) },
-                                    onClick = {
-                                        version = item
-                                        profileName = loader + " " + item
-                                        customId = loader.lowercase() + "-" + item.replace(".", "-")
-                                        versionMenu = false
-                                    }
-                                )
+                    }
+                    if (versionMenu) {
+                        MinecraftVersionPickerDialog(
+                            selectedVersion = version,
+                            onDismiss = { versionMenu = false },
+                            onSelect = {
+                                version = it
+                                profileName = loader + " " + it
+                                customId = loader.lowercase() + "-" + it.replace(".", "-")
+                                versionMenu = false
                             }
-                        }
+                        )
                     }
                     Text("Pick a loader build, then a compatible Minecraft version — the profile is created right here.", color = RefMuted)
                 }
@@ -679,6 +680,113 @@ fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, 
         }
     }
 }
+@Composable
+private fun MinecraftVersionPickerDialog(
+    selectedVersion: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+
+    val versions = listOf(
+        "26.3" to "release",
+        "26.3-snapshot-2" to "snapshot",
+        "26.3-snapshot-1" to "snapshot",
+        "26.2" to "release",
+        "26.2-rc-2" to "snapshot",
+        "26.2-rc-1" to "snapshot",
+        "1.21.8" to "release",
+        "1.21.7" to "release",
+        "1.21.6" to "release",
+        "1.21.5" to "release",
+        "1.21.4" to "release",
+        "1.21.4-rc3" to "snapshot",
+        "1.21.4-rc2" to "snapshot",
+        "1.21.4-rc1" to "snapshot",
+        "1.21.3" to "release",
+        "1.21.2" to "release",
+        "1.21.1" to "release",
+        "1.21" to "release",
+        "1.20.6" to "release",
+        "1.20.4" to "release",
+        "1.20.1" to "release",
+        "1.19.4" to "release"
+    ).filter { it.first.contains(query, ignoreCase = true) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = true)
+    ) {
+        Card(
+            Modifier.fillMaxWidth(.94f).fillMaxHeight(.92f),
+            colors = CardDefaults.cardColors(containerColor = Color(0xF414151A)),
+            shape = RoundedCornerShape(32.dp),
+            border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF2B2F39))
+        ) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 34.dp, vertical = 24.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Minecraft — Minecraft Versions", color = RefText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Select a version build", color = RefMuted, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Surface(
+                        Modifier.size(64.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Color(0xFF171920),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF343844)),
+                        onClick = onDismiss
+                    ) { Box(contentAlignment = Alignment.Center) { Text("×", color = RefText, style = MaterialTheme.typography.headlineMedium) } }
+                }
+
+                Spacer(Modifier.height(22.dp))
+
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth().height(78.dp),
+                    singleLine = true,
+                    placeholder = { Text("Search versions...", color = RefMuted, style = MaterialTheme.typography.titleMedium) },
+                    leadingIcon = { Text("⌕", color = RefText, style = MaterialTheme.typography.headlineSmall) },
+                    shape = RoundedCornerShape(40.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF353944),
+                        unfocusedBorderColor = Color(0xFF292C34),
+                        focusedTextColor = RefText,
+                        unfocusedTextColor = RefText,
+                        cursorColor = RefText
+                    )
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    items(versions) { (item, type) ->
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(84.dp),
+                            shape = RoundedCornerShape(22.dp),
+                            color = if (item == selectedVersion) Color(0xFF252A34) else Color.Transparent,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF272B34)),
+                            onClick = { onSelect(item) }
+                        ) {
+                            Row(Modifier.fillMaxSize().padding(horizontal = 26.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(item, color = RefText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                                if (type == "snapshot") {
+                                    Spacer(Modifier.width(14.dp))
+                                    Text("·  snapshot", color = RefText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun CreateInstanceReferenceDialog(
     onDismiss: () -> Unit,
