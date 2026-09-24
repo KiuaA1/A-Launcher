@@ -235,6 +235,100 @@ private fun AccountListRow(name: String, subtitle: String, active: Boolean) {
 }
 
 @Composable
+fun CursorStudioReferenceScreen() {
+    var style by remember { mutableIntStateOf(0) }
+    var size by remember { mutableFloatStateOf(100f) }
+    var opacity by remember { mutableFloatStateOf(100f) }
+    var speed by remember { mutableFloatStateOf(1f) }
+
+    Row(
+        Modifier.fillMaxSize().padding(start = 145.dp, top = 20.dp, end = 30.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Card(
+            Modifier.weight(1.25f).fillMaxHeight(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xD20F121A)),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("‹", color = RefMuted, style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Cursor Studio", color = RefText, style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.weight(1f))
+                    Text("♡", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                }
+                HorizontalDivider(color = Color(0x332F3440))
+                Text("CLASSIC ARROW", color = RefMuted, style = MaterialTheme.typography.labelSmall)
+                Box(
+                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(14.dp)).background(Color(0xFF080A0F)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("➤", color = Color.White, style = MaterialTheme.typography.displayLarge)
+                }
+                Text("Classic Arrow", color = RefText, style = MaterialTheme.typography.titleMedium)
+                Text("by CS Studio  ·  CLASSIC", color = RefMuted, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        Card(
+            Modifier.width(300.dp).fillMaxHeight(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xD20F121A)),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("SAVE & APPLY", color = RefText, style = MaterialTheme.typography.labelMedium)
+                }
+                Text("QUICK STYLE", color = RefMuted, style = MaterialTheme.typography.labelSmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CursorStyleChip("CLASSIC", 0, style) { style = 0 }
+                    CursorStyleChip("GAMEPAD", 1, style) { style = 1 }
+                    CursorStyleChip("CUSTOM", 2, style) { style = 2 }
+                }
+                Text("TUNING", color = RefMuted, style = MaterialTheme.typography.labelSmall)
+                CursorSlider("SIZE", size, "%") { size = it }
+                CursorSlider("OPACITY", opacity, "%") { opacity = it }
+                CursorSlider("ANIMATION SPEED", speed, "x") { speed = it }
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = { size = 100f; opacity = 100f; speed = 1f }, Modifier.weight(1f)) { Text("RESET") }
+                    Button(onClick = {}, Modifier.weight(1f)) { Text("EXPORT") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CursorStyleChip(title: String, index: Int, selected: Int, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        Modifier.weight(1f).height(66.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected == index) Color(0xFF252A34) else Color(0xFF171A22)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text(if (index == 0) "➤" else if (index == 1) "✛" else "✦", color = RefText)
+            Text(title, color = RefMuted, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+@Composable
+private fun CursorSlider(label: String, value: Float, suffix: String, onChange: (Float) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row {
+            Text(label, color = RefMuted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+            Text("\${value.toInt()}\$suffix", color = RefText, style = MaterialTheme.typography.labelSmall)
+        }
+        Slider(value = value, onValueChange = onChange, valueRange = if (suffix == "x") .5f..2f else 50f..150f)
+    }
+}
+
+@Composable
 fun BrowseResourcesReferenceScreen() {
     ReferencePage("Browse Resources", "Mods, resource packs and shaders for your instances.") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
