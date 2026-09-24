@@ -105,16 +105,16 @@ pub fn resolve_libraries(
             normal.push(artifact_from_download(&library.name, artifact, None, false));
         }
 
-        let native_classifier = library
-            .name
-            .split(':')
-            .next_back()
-            .map(|_| format!("natives-{}", platform.os_name()))
-            .unwrap_or_default();
-
         if let Some(classifiers) = &library.downloads.classifiers {
-            if let Some(native) = classifiers.get(&native_classifier) {
-                natives.push(artifact_from_download(&library.name, native, Some(&native_classifier), true));
+            let candidates = [
+                format!("natives-{}-{}", platform.os_name(), platform.arch_name()),
+                format!("natives-{}", platform.os_name()),
+            ];
+            for classifier in candidates {
+                if let Some(native) = classifiers.get(&classifier) {
+                    natives.push(artifact_from_download(&library.name, native, Some(&classifier), true));
+                    break;
+                }
             }
         }
     }
