@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::{error::EngineError,fs::StorageLayout,instances::InstanceManager,instance::Instance,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::DownloadTransport,classpath::{Classpath,build_classpath},native::extract_native_jar,artifacts::download_resolution as download_artifacts,plan::LaunchPreparation,runtime::RuntimeManager,manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan,process::{DefaultProcessManager,ManagedProcess,ProcessManager,ProcessEvent};
+use crate::{error::EngineError,fs::StorageLayout,instances::InstanceManager,instance::Instance,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{maven_path,Resolution,TargetPlatform},download::DownloadTransport,classpath::{Classpath,build_classpath},native::extract_native_jar,artifacts::download_resolution as download_artifacts,plan::LaunchPreparation,runtime::RuntimeManager,manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan,process::{DefaultProcessManager,ManagedProcess,ProcessManager,ProcessEvent};
 
 #[derive(Debug,Clone)]
 pub struct LauncherEngine { pub storage:StorageLayout, pub instances:InstanceManager }
