@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
 private val RefPanel = Color(0xD9161A24)
@@ -18,120 +19,222 @@ private val RefAccent = Color(0xFF7C4DFF)
 
 @Composable
 fun AccountsReferenceScreen() {
-    var showPicker by remember { mutableStateOf(false) }
-    var showLocal by remember { mutableStateOf(false) }
-    var showMicrosoft by remember { mutableStateOf(false) }
+    var playerName by remember { mutableStateOf("") }
+    var created by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxSize().padding(start = 145.dp, top = 30.dp, end = 30.dp, bottom = 30.dp),
-            horizontalArrangement = Arrangement.spacedBy(28.dp)
+    Row(
+        Modifier
+            .fillMaxSize()
+            .padding(start = 145.dp, top = 30.dp, end = 30.dp, bottom = 30.dp),
+        horizontalArrangement = Arrangement.spacedBy(28.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Card(
+            modifier = Modifier
+                .weight(0.88f)
+                .height(340.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xE915171D)),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Card(
-                modifier = Modifier.weight(.9f).fillMaxHeight(.72f),
-                colors = CardDefaults.cardColors(containerColor = Color(0xE914151B)),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(Modifier.padding(34.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("ID  ·  SIGN IN", color = RefMuted, style = MaterialTheme.typography.labelLarge)
-                    Text("Who is playing?", color = RefText, style = MaterialTheme.typography.headlineLarge)
-                    Text(
-                        "Pick how this launcher should identify you. You can add more accounts later from the account switcher.",
-                        color = RefMuted,
-                        style = MaterialTheme.typography.titleMedium
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(58.dp)
+                        .background(Color(0xFF090A0F))
+                        .padding(horizontal = 26.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        Modifier
+                            .width(44.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFF2B2E38))
                     )
-                    HorizontalDivider(color = Color(0x332F3440))
-                    Text("•  Microsoft   — servers · skins · capes", color = RefMuted)
-                    Text("•  ely.by       — free skins · many servers", color = RefMuted)
-                    Text("○  Local        — offline / LAN only", color = RefMuted)
+                    Spacer(Modifier.width(20.dp))
+                    Text(
+                        "P L A Y E R   B A D G E",
+                        color = RefMuted,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "LOCAL",
+                        color = RefText,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFF111319))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+
+                HorizontalDivider(color = Color(0x332F3440))
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(28.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        Modifier
+                            .size(142.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(
+                                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    listOf(
+                                        Color(0xFF24262A),
+                                        Color(0xFF70462D),
+                                        Color(0xFFC06B35)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        Box(
+                            Modifier
+                                .size(18.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(Color(0xFF111318))
+                                .padding(4.dp)
+                        ) {
+                            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(50)).background(Color(0xFFE7E9ED)))
+                        }
+                    }
+
+                    Spacer(Modifier.width(28.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("N A M E", color = Color(0xFF6E7380), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            if (created && playerName.isNotBlank()) playerName else "Player",
+                            color = RefText,
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text("A C C E S S", color = Color(0xFF6E7380), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            "Offline & LAN worlds · skin from your\nfile or a matching Mojang name",
+                            color = RefMuted,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .background(Color(0xFF090A0F))
+                        .padding(horizontal = 28.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("CS LAUNCHER PLUS", color = Color(0xFF565B67), style = MaterialTheme.typography.labelSmall)
+                    Text("  ·  ", color = Color(0xFF343842))
+                    Text("NO PASSWORD", color = Color(0xFF565B67), style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.weight(1f))
+                    Text("▥▥▥▥▥▥▥", color = Color(0xFF565B67), style = MaterialTheme.typography.labelSmall)
                 }
             }
+        }
 
+        Card(
+            modifier = Modifier
+                .weight(1.12f)
+                .height(485.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xE915171D)),
+            shape = RoundedCornerShape(24.dp)
+        ) {
             Column(
-                Modifier.weight(1.1f).fillMaxHeight(.72f),
+                Modifier
+                    .fillMaxSize()
+                    .padding(34.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                AccountOption(
-                    title = "Microsoft account",
-                    subtitle = "Premium · full online play",
-                    badge = "1",
-                    selected = true,
-                    onClick = { showMicrosoft = true }
-                )
-                AccountOption(
-                    title = "ely.by account",
-                    subtitle = "Free · skins & capes, ely-enabled servers",
-                    badge = "2",
-                    selected = false,
-                    onClick = { showPicker = true }
-                )
-                AccountOption(
-                    title = "Local profile",
-                    subtitle = "Offline · pick any name, no password",
-                    badge = "3",
-                    selected = false,
-                    onClick = { showLocal = true }
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Mint a local profile",
+                        color = RefText,
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "${playerName.length} / 16",
+                        color = RefMuted,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF171A22))
+                            .padding(horizontal = 12.dp, vertical = 7.dp)
+                    )
+                }
+
                 Text(
-                    "// credentials go straight to the provider — the launcher never sees your password",
-                    color = Color(0xFF5F6470),
-                    style = MaterialTheme.typography.bodySmall
+                    "Type the name other players will see. Nothing leaves your device.",
+                    color = RefMuted,
+                    style = MaterialTheme.typography.titleMedium
                 )
-            }
-        }
 
-        if (showPicker) {
-            ReferenceDialog(
-                title = "Who is playing?",
-                onDismiss = { showPicker = false }
-            ) {
-                AddAccountCard { showPicker = false }
-                AccountListRow("kiua", "LOCAL · ACTIVE SKIN SLOT 1", true)
-            }
-        }
+                Spacer(Modifier.height(8.dp))
 
-        if (showLocal) {
-            ReferenceDialog(
-                title = "Mint a local profile",
-                onDismiss = { showLocal = false }
-            ) {
-                Text("Type the name other players will see. Nothing leaves your device.", color = RefMuted)
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    placeholder = { Text(">_ player_name", color = Color(0xFF5C606A)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    value = playerName,
+                    onValueChange = { value ->
+                        if (value.length <= 16 && value.all { it.isLetterOrDigit() || it == '_' }) {
+                            playerName = value
+                            created = false
+                        }
+                    },
+                    placeholder = {
+                        Text(">_ player_name", color = Color(0xFF5C606A))
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(82.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF454A58),
+                        unfocusedBorderColor = Color(0xFF30343E),
+                        focusedTextColor = RefText,
+                        unfocusedTextColor = RefText,
+                        cursorColor = RefText
+                    )
                 )
+
                 Text("○  3 – 16 characters", color = RefMuted)
                 Text("○  letters, numbers, underscore", color = RefMuted)
                 Text("○  not already on this launcher", color = RefMuted)
-                Button(
-                    onClick = { showLocal = false },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF284F7E))
-                ) { Text("MINT PROFILE") }
-            }
-        }
 
-        if (showMicrosoft) {
-            ReferenceDialog(
-                title = "Sign in",
-                onDismiss = { showMicrosoft = false }
-            ) {
-                Text("Microsoft", color = RefText, style = MaterialTheme.typography.headlineMedium)
-                Text("to continue to Minecraft.", color = RefMuted)
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    label = { Text("Email or phone number") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Spacer(Modifier.weight(1f))
+
                 Button(
-                    onClick = { },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4C8E32))
-                ) { Text("Next") }
+                    onClick = { created = true },
+                    enabled = playerName.length in 3..16,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF284F7E),
+                        disabledContainerColor = Color(0xFF1C3554),
+                        contentColor = Color(0xFF121722),
+                        disabledContentColor = Color(0xFF111722)
+                    )
+                ) {
+                    Text("MINT PROFILE", fontWeight = FontWeight.SemiBold, letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp))
+                }
+
+                if (created) {
+                    Text(
+                        "Profile ready · $playerName",
+                        color = Color(0xFFB8C5D8),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }
