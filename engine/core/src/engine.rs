@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::{error::EngineError,fs::StorageLayout,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::{DownloadRequest,DownloadTransport,prepare_download},classpath::{Classpath,build_classpath},native::extract_native_jar,plan::LaunchPreparation,runtime::RuntimeManager,manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan,process::{DefaultProcessManager,ManagedProcess,ProcessManager};
+use crate::{error::EngineError,fs::StorageLayout,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::{DownloadRequest,DownloadTransport,prepare_download},classpath::{Classpath,build_classpath},native::extract_native_jar,plan::LaunchPreparation,runtime::RuntimeManager,manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan,process::{DefaultProcessManager,ManagedProcess,ProcessManager,ProcessEvent};
 
 #[derive(Debug,Clone)]
 pub struct LauncherEngine { pub storage:StorageLayout }
@@ -63,6 +63,15 @@ impl LauncherEngine {
   let process=manager.spawn(plan)?;
   let events=vec![Self::event(LaunchState::Starting,"Minecraft process started"),Self::event(LaunchState::Running,"Minecraft is running")];
   Ok((process,events))
+ }
+
+ pub fn poll_process_events(&self,process:&ManagedProcess)->Vec<LaunchEvent>{
+  process.events().try_iter().map(|event| match event {
+   ProcessEvent::Started=>Self::event(LaunchState::Starting,"process stream connected"),
+   ProcessEvent::Stdout(line)=>Self::event(LaunchState::Running,line),
+   ProcessEvent::Stderr(line)=>Self::event(LaunchState::Running,line),
+   ProcessEvent::Exited(code)=>{ let mut e=LaunchEvent::exited(code); if code!=0 { e.state=LaunchState::Failed; } e }
+  }).collect()
  }
 
  pub fn prepare(&self)->Result<LaunchEvent,EngineError>{
