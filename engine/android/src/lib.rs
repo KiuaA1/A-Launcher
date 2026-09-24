@@ -81,3 +81,21 @@ pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_native
         Err(_) => std::ptr::null_mut(),
     }
 }
+
+#[no_mangle]
+pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_nativeLaunch(
+    mut env: JNIEnv,
+    _class: JClass,
+    instance_id: JString,
+) -> jni::sys::jint {
+    let id = match jstring_value(&mut env, instance_id) {
+        Ok(v) => v,
+        Err(_) => return 0,
+    };
+    let slot = engine_slot().lock().unwrap();
+    let Some(engine) = slot.as_ref() else { return 0; };
+    match engine.instance_launch_config(&id) {
+        Ok(_) => 1,
+        Err(_) => 0,
+    }
+}
