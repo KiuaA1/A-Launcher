@@ -1,4 +1,4 @@
-use std::{fs::File, io::{self, Read}, path::{Path, PathBuf}};
+use std::{fs::File, io, path::{Path, PathBuf}};
 use zip::ZipArchive;
 use crate::{error::EngineError, resolver::MinecraftArtifact};
 
@@ -15,9 +15,14 @@ pub fn extract_native_jar(jar: &Path, destination: &Path) -> Result<usize, Engin
     for i in 0..archive.len() {
         let mut entry=archive.by_index(i).map_err(|e| EngineError::DownloadFailed(format!("read native entry: {e}")))?;
         let name=entry.name().to_string();
-        if entry.is_dir() || !name.starts_with("META-INF/") && !name.starts_with("org/") && !name.starts_with("com/") && !name.ends_with(".so") && !name.ends_with(".dll") && !name.ends_with(".dylib") { continue; }
+        if entry.is_dir() { continue; }
+        let is_native = name.ends_with(".so") || name.ends_with(".dll") || name.ends_with(".dylib") || name.ends_with(".jnilib");
+        if !is_native { continue; }
         let rel=match safe_entry(&name) { Some(p)=>p, None=>continue };
+        let filename=match rel.file_name().and_then(|n|n.to_str()) { Some(n)=>n, None=>continue };
+        if filename.is_empty() { continue; }
         let out=destination.join(rel);
+        if out.exists() { return Err(EngineError::DownloadFailed(format!("native extraction collision: {}", out.display()))); }
         if let Some(parent)=out.parent(){std::fs::create_dir_all(parent).map_err(|e|EngineError::DownloadFailed(e.to_string()))?;}
         let mut f=File::create(&out).map_err(|e|EngineError::DownloadFailed(e.to_string()))?;
         io::copy(&mut entry,&mut f).map_err(|e|EngineError::DownloadFailed(e.to_string()))?;
