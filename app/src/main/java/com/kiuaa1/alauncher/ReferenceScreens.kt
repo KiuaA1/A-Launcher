@@ -652,6 +652,7 @@ fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, 
                     }
                     if (versionMenu) {
                         MinecraftVersionPickerDialog(
+                            loader = loader,
                             selectedVersion = version,
                             onDismiss = { versionMenu = false },
                             onSelect = {
@@ -682,36 +683,73 @@ fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, 
 }
 @Composable
 private fun MinecraftVersionPickerDialog(
+    loader: String,
     selectedVersion: String,
     onDismiss: () -> Unit,
     onSelect: (String) -> Unit
 ) {
     var query by remember { mutableStateOf("") }
 
-    val versions = listOf(
-        "26.3" to "release",
-        "26.3-snapshot-2" to "snapshot",
-        "26.3-snapshot-1" to "snapshot",
-        "26.2" to "release",
-        "26.2-rc-2" to "snapshot",
-        "26.2-rc-1" to "snapshot",
-        "1.21.8" to "release",
-        "1.21.7" to "release",
-        "1.21.6" to "release",
-        "1.21.5" to "release",
-        "1.21.4" to "release",
-        "1.21.4-rc3" to "snapshot",
-        "1.21.4-rc2" to "snapshot",
-        "1.21.4-rc1" to "snapshot",
-        "1.21.3" to "release",
-        "1.21.2" to "release",
-        "1.21.1" to "release",
-        "1.21" to "release",
-        "1.20.6" to "release",
-        "1.20.4" to "release",
-        "1.20.1" to "release",
-        "1.19.4" to "release"
-    ).filter { it.first.contains(query, ignoreCase = true) }
+    val versions = remember(loader) {
+        when (loader) {
+            "NeoForge" -> listOf(
+                "1.21.9" to "release",
+                "1.21.10" to "release",
+                "1.21.11" to "release",
+                "1.26.1" to "release",
+                "1.21.8" to "release",
+                "1.21.7" to "release",
+                "1.21.6" to "release"
+            )
+            "Forge" -> listOf(
+                "1.21.5" to "release",
+                "1.21.4" to "release",
+                "1.21.3" to "release",
+                "1.21.1" to "release",
+                "1.20.1" to "release",
+                "1.19.4" to "release"
+            )
+            "Fabric" -> listOf(
+                "26.3" to "release",
+                "26.3-snapshot-2" to "snapshot",
+                "26.3-snapshot-1" to "snapshot",
+                "26.2" to "release",
+                "26.2-rc-2" to "snapshot",
+                "26.2-rc-1" to "snapshot",
+                "1.21.8" to "release",
+                "1.21.7" to "release",
+                "1.21.6" to "release",
+                "1.21.5" to "release",
+                "1.21.4" to "release",
+                "1.21.4-rc3" to "snapshot",
+                "1.21.4-rc2" to "snapshot",
+                "1.21.4-rc1" to "snapshot",
+                "1.21.3" to "release",
+                "1.21.2" to "release",
+                "1.21.1" to "release",
+                "1.21" to "release",
+                "1.20.6" to "release",
+                "1.20.4" to "release",
+                "1.20.1" to "release",
+                "1.19.4" to "release"
+            )
+            "Quilt" -> listOf(
+                "1.21.1" to "release",
+                "1.21" to "release",
+                "1.20.6" to "release",
+                "1.20.4" to "release",
+                "1.20.1" to "release"
+            )
+            "OptiFine" -> listOf(
+                "1.21.1" to "release",
+                "1.20.6" to "release",
+                "1.20.4" to "release",
+                "1.20.1" to "release",
+                "1.19.4" to "release"
+            )
+            else -> listOf("26.3" to "release", "1.21.8" to "release", "1.21.4" to "release", "1.20.1" to "release")
+        }
+    }.filter { it.first.contains(query, ignoreCase = true) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -726,7 +764,12 @@ private fun MinecraftVersionPickerDialog(
             Column(Modifier.fillMaxSize().padding(horizontal = 34.dp, vertical = 24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Minecraft — Minecraft Versions", color = RefText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            "$loader — Minecraft Versions",
+                            color = RefText,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(Modifier.height(4.dp))
                         Text("Select a version build", color = RefMuted, style = MaterialTheme.typography.titleMedium)
                     }
