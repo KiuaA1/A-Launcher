@@ -55,21 +55,21 @@ impl LauncherEngine {
   Ok((resolution,events))
  }
 
- pub fn download_resolution<T:DownloadTransport>(&self,resolution:&Resolution,transport:&T)->Result<(usize,Vec<LaunchEvent>),EngineError>{
+ pub fn download_resolution<T:DownloadTransport>(&self,instance_id:&str,resolution:&Resolution,transport:&T)->Result<(usize,Vec<LaunchEvent>),EngineError>{
   let mut events=vec![Self::event(LaunchState::Downloading,"downloading resolved Minecraft artifacts")];
-  let summary=download_artifacts(transport,&self.storage,resolution)?;
+  let summary=download_artifacts(transport,&self.storage,instance_id,resolution)?;
   events.push(Self::event(LaunchState::Downloading,format!("verified {} artifacts ({} cached, {} downloaded)",summary.total(),summary.cached,summary.downloaded)));
   Ok((summary.total(),events))
  }
 
- pub fn prepare_runtime(&self,resolution:&Resolution)->Result<(),EngineError>{
+ pub fn prepare_runtime(&self,instance_id:&str,resolution:&Resolution)->Result<(),EngineError>{
   self.storage.ensure_dirs().map_err(|e|EngineError::RuntimeUnavailable(format!("prepare storage: {e}")))?;
   for artifact in &resolution.native_libraries {
    let rel=artifact.path.clone().or_else(||maven_path(&artifact.id,artifact.classifier.as_deref(),"jar").ok())
     .ok_or_else(||EngineError::InvalidLaunchPlan(format!("cannot derive native path for {}",artifact.id)))?;
    let jar=self.storage.libraries.join(&rel);
    if !jar.is_file(){return Err(EngineError::DownloadFailed(format!("native JAR missing: {}",jar.display())));}
-   extract_native_jar(&jar,&self.storage.natives.join(&resolution.minecraft_version))?;
+   extract_native_jar(&jar,&self.storage.natives.join(instance_id))?;
   }
   Ok(())
  }
