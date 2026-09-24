@@ -12,8 +12,8 @@ impl LaunchPreparation{
  }
  pub fn build_launch_plan(&self,java_executable:&str,classpath:&Classpath,arguments:&crate::manifest::Arguments,mut ctx:LaunchContext)->Result<LaunchPlan,EngineError>{
   ctx.version_name=self.minecraft_version.clone();ctx.game_directory=self.game_directory.to_string_lossy().into_owned();ctx.classpath=classpath.as_separator_string();
-  let (mut jvm,mut game)=build_arguments(Some(arguments),None,&ctx)?;
-  jvm.push("-cp".into());jvm.push(ctx.classpath.clone());game.push(self.main_class.clone());
+  let (mut jvm,resolved_game)=build_arguments(Some(arguments),None,&ctx)?;
+  jvm.push("-cp".into());jvm.push(ctx.classpath.clone());\n  let mut game=Vec::with_capacity(resolved_game.len()+1);game.push(self.main_class.clone());game.extend(resolved_game);
   let p=LaunchPlan{minecraft_version:self.minecraft_version.clone(),java_executable:java_executable.into(),game_directory:ctx.game_directory.clone(),classpath:classpath.entries.iter().map(|p|p.to_string_lossy().into_owned()).collect(),jvm_args:jvm,game_args:game};p.validate()?;Ok(p)
  }
 }
