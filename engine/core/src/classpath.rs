@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use crate::{error::EngineError, resolver::MinecraftArtifact};
+use crate::{error::EngineError, resolver::{maven_path, MinecraftArtifact}};
 
 #[derive(Debug, Clone)]
 pub struct Classpath {
@@ -27,7 +27,15 @@ pub fn build_classpath(
 ) -> Result<Classpath, EngineError> {
     let mut entries = Vec::with_capacity(libraries.len() + 1);
     for lib in libraries {
-        let rel = lib.path.as_deref().ok_or_else(|| EngineError::InvalidLaunchPlan(format!("library {} has no path", lib.id)))?;
+        let derived;
+        let rel = match lib.path.as_deref() {
+            Some(path) => path,
+            None => {
+                derived = maven_path(&lib.id, lib.classifier.as_deref(), "jar")
+                    .map_err(|e| EngineError::InvalidLaunchPlan(format!("derive path for {}: {e}", lib.id)))?;
+                &derived
+            }
+        };
         let path = Path::new(rel);
         if path.is_absolute() || path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
             return Err(EngineError::InvalidLaunchPlan(format!("unsafe library path: {rel}")));
