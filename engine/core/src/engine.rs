@@ -142,7 +142,7 @@ impl LauncherEngine {
 }
 
 
-fn validate_instance_launch(storage:&StorageLayout,config:&InstanceConfig)->Result<(),EngineError>{
+pub fn validate_instance_launch(storage:&StorageLayout,config:&InstanceConfig)->Result<(),EngineError>{
  let game_dir=&config.instance.game_directory;
  if !game_dir.is_dir(){
   return Err(EngineError::InvalidLaunchPlan(format!("instance game directory is missing: {}",game_dir.display())));
