@@ -8,7 +8,7 @@ pub struct InstanceConfig{
  #[serde(default)] pub java_runtime_id:Option<String>,
  #[serde(default)] pub memory_mb:Option<u32>,
  #[serde(default)] pub jvm_args:Vec<String>,
- #[serde(default)] pub game_args:Vec<String>,
+ #[serde(default)] pub game_args:Vec<String>,\n #[serde(default)] pub environment:std::collections::HashMap<String,String>,
 }
 
 #[derive(Debug,Clone)]
@@ -21,7 +21,7 @@ impl InstanceManager{
   if name.trim().is_empty(){return Err(EngineError::InvalidLaunchPlan("instance name is empty".into()));}
   if version.trim().is_empty(){return Err(EngineError::InvalidLaunchPlan("Minecraft version is empty".into()));}
   let instance=Instance{id:id.into(),name:name.into(),game_directory:self.storage.instance_game_dir(id),minecraft_version:version.into(),loader};
-  let config=InstanceConfig{instance:instance.clone(),java_runtime_id:None,memory_mb:None,jvm_args:Vec::new(),game_args:Vec::new()};
+  let config=InstanceConfig{instance:instance.clone(),java_runtime_id:None,memory_mb:None,jvm_args:Vec::new(),game_args:Vec::new(),environment:std::collections::HashMap::new()};
   self.save(&config)?;
   Ok(instance)
  }
