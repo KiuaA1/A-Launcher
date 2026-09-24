@@ -117,3 +117,35 @@ impl ReqwestDownloadTransport {
             .map_err(|e| EngineError::DownloadFailed(format!("write response: {e}")))
     }
 }
+
+
+pub fn prepare_download_async<'a>(
+    transport: &'a ReqwestDownloadTransport,
+    request: &'a DownloadRequest,
+) -> impl std::future::Future<Output = Result<DownloadStatus, EngineError>> + 'a {
+    async move {
+        if request.url.trim().is_empty() {
+            return Err(EngineError::DownloadFailed("download URL is empty".into()));
+        }
+        if let Some(parent) = request.destination.parent() {
+            tokio::fs::create_dir_all(parent).await
+                .map_err(|e| EngineError::DownloadFailed(format!("create destination: {e}")))?;
+        }
+        if request.destination.exists()
+            && crate::cache::verify_file(&request.destination, request.expected_sha1.as_deref(), request.expected_size)
+                .map_err(|e| EngineError::DownloadFailed(format!("verify cache: {e}")))? {
+            return Ok(DownloadStatus::Cached);
+        }
+        let partial = request.destination.with_extension("part");
+        let _ = tokio::fs::remove_file(&partial).await;
+        transport.fetch_to_async(&request.url, &partial).await?;
+        if !crate::cache::verify_file(&partial, request.expected_sha1.as_deref(), request.expected_size)
+            .map_err(|e| EngineError::DownloadFailed(format!("verify download: {e}")))? {
+            let _ = tokio::fs::remove_file(&partial).await;
+            return Err(EngineError::DownloadFailed("download failed integrity verification".into()));
+        }
+        tokio::fs::rename(&partial, &request.destination).await
+            .map_err(|e| EngineError::DownloadFailed(format!("commit download: {e}")))?;
+        Ok(DownloadStatus::Downloaded)
+    }
+}
