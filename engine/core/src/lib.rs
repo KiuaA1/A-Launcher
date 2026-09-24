@@ -35,6 +35,7 @@ pub mod native;
 pub mod plan;
 pub mod process;
 pub mod resolver;
+pub mod session;
 pub mod runtime;
 
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
