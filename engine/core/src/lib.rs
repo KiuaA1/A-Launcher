@@ -1,4 +1,5 @@
 pub mod artifacts;
+pub mod arguments;
 pub mod cache;
 pub mod download;
 pub mod error;
