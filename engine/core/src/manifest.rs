@@ -28,7 +28,7 @@ pub struct Library { pub name: String, #[serde(default)] pub downloads: LibraryD
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct LibraryDownloads { #[serde(default)] pub artifact: Option<ArtifactDownload>, #[serde(default)] pub classifiers: Option<std::collections::HashMap<String, ArtifactDownload>> }
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Rule { pub action: String, #[serde(default)] pub os: Option<OsRule> }
+pub struct Rule { pub action: String, #[serde(default)] pub os: Option<OsRule>, #[serde(default)] pub features: std::collections::HashMap<String,bool> }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsRule { #[serde(default)] pub name: Option<String>, #[serde(default)] pub arch: Option<String> }
 #[derive(Debug, Clone, Serialize, Deserialize)]
