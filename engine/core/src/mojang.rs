@@ -65,6 +65,49 @@ impl VersionResolver for MojangResolver {
     }
 }
 
+pub fn resolve_inheritance_chain<T: crate::download::DownloadTransport>(
+    &self,
+    version: &str,
+    transport: &T,
+    metadata_root: &Path,
+) -> Result<VersionJson, EngineError> {
+    let manifest = parse_manifest_json(&self.manifest_json)?;
+    let mut current = version.to_string();
+    let mut chain = Vec::new();
+    let mut visited = std::collections::HashSet::new();
+
+    loop {
+        if !visited.insert(current.clone()) {
+            return Err(EngineError::ManifestInvalid(format!("version inheritance cycle detected at {current}")));
+        }
+        let entry = manifest.versions.iter().find(|v| v.id == current)
+            .ok_or_else(|| EngineError::VersionNotFound(current.clone()))?;
+        let destination = Self::cached_version_path(metadata_root, &current);
+        if !destination.exists() {
+            if let Some(parent) = destination.parent() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| EngineError::DownloadFailed(format!("create inheritance cache: {e}")))?;
+            }
+            transport.fetch_to(&entry.url, &destination)?;
+        }
+        let json = std::fs::read_to_string(&destination)
+            .map_err(|e| EngineError::ManifestInvalid(format!("read inherited metadata: {e}")))?;
+        let parsed = parse_version_json(&json)?;
+        let parent = parsed.inherits_from.clone();
+        chain.push(parsed);
+        match parent {
+            Some(parent_id) => current = parent_id,
+            None => break,
+        }
+    }
+
+    let mut merged = chain.pop().ok_or_else(|| EngineError::VersionNotFound(version.into()))?;
+    while let Some(child) = chain.pop() {
+        merged = crate::manifest::merge_version_json(&merged, &child);
+    }
+    Ok(merged)
+}
+
 pub fn resolve_inheritance(child_json: &str, parent_json: &str) -> Result<VersionJson, EngineError> {
     let child = parse_version_json(child_json)?;
     let parent = parse_version_json(parent_json)?;
