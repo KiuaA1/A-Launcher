@@ -104,10 +104,7 @@ pub extern "system" fn Java_com_kiuaa1_alauncher_NativeLauncherBridgeImpl_native
     if a_launcher_core::engine::validate_instance_launch(&engine.storage, &config).is_err() {
         return 0;
     }
-    let java = match std::env::var("A_LAUNCHER_JAVA") {
-        Ok(value) if !value.is_empty() => value,
-        _ => return 0,
-    };
+    if java.is_empty() { return 0; }
     let transport = match ReqwestDownloadTransport::new() { Ok(value) => value, Err(_) => return 0 };
     let metadata = MojangMetadataClient::new(transport);
     let manifest_path = MojangMetadataClient::<ReqwestDownloadTransport>::cached_manifest_path(&engine.storage.cache);
