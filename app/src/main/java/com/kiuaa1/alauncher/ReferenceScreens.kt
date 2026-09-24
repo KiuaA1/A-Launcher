@@ -388,63 +388,143 @@ private fun CursorSlider(label: String, value: Float, suffix: String, onChange: 
 fun InstancesReferenceScreen(api: LauncherApi) {
     var instances by remember { mutableStateOf(api.listInstances()) }
     var showCreate by remember { mutableStateOf(false) }
-
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 24.dp, end = 30.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Instances", color = RefText, style = MaterialTheme.typography.headlineLarge)
-                    Text("Manage your Minecraft installations and profiles.", color = RefMuted)
-                }
-                Button(onClick = { showCreate = true }, shape = RoundedCornerShape(18.dp)) { Text("+  NEW INSTANCE") }
+    if (showCreate) {
+        CreateVersionReferenceScreen(onBack = { showCreate = false }, onCreate = { id, name, version, loader ->
+            api.createInstance(id, name, version, loader); instances = api.listInstances(); showCreate = false
+        })
+        return
+    }
+    Column(Modifier.fillMaxSize().padding(start = 145.dp, top = 24.dp, end = 30.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Instances", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                Text("Manage your Minecraft installations and profiles.", color = RefMuted)
             }
-            if (instances.isEmpty()) {
-                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = RefPanel), shape = RoundedCornerShape(24.dp)) {
-                    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text("No instances yet", color = RefText, style = MaterialTheme.typography.headlineSmall)
-                        Spacer(Modifier.height(8.dp))
-                        Text("Create an instance to start configuring Minecraft.", color = RefMuted)
-                        Spacer(Modifier.height(18.dp))
-                        Button(onClick = { showCreate = true }) { Text("CREATE INSTANCE") }
-                    }
+            Button(onClick = { showCreate = true }, shape = RoundedCornerShape(18.dp)) { Text("+  NEW INSTANCE") }
+        }
+        if (instances.isEmpty()) {
+            Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = RefPanel), shape = RoundedCornerShape(24.dp)) {
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Text("No instances yet", color = RefText, style = MaterialTheme.typography.headlineSmall)
+                    Text("Create an instance to start configuring Minecraft.", color = RefMuted)
+                    Spacer(Modifier.height(18.dp))
+                    Button(onClick = { showCreate = true }) { Text("CREATE INSTANCE") }
                 }
-            } else {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    instances.forEach { instance ->
-                        Card(Modifier.fillMaxWidth().height(96.dp), colors = CardDefaults.cardColors(containerColor = RefPanel), shape = RoundedCornerShape(18.dp)) {
-                            Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF343841)), contentAlignment = Alignment.Center) {
-                                    Text(if (instance.loader == null) "▣" else "◇", color = RefText, style = MaterialTheme.typography.headlineSmall)
-                                }
-                                Spacer(Modifier.width(16.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(instance.name, color = RefText, style = MaterialTheme.typography.titleLarge)
-                                    Text("Minecraft " + instance.minecraftVersion + (instance.loader?.let { "  ·  " + it } ?: "  ·  Vanilla"), color = RefMuted)
-                                }
-                                OutlinedButton(onClick = {}) { Text("EDIT") }
-                                Spacer(Modifier.width(8.dp))
-                                Button(onClick = {}) { Text("PLAY") }
-                                Spacer(Modifier.width(8.dp))
-                                Text("⋮", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+            }
+        } else {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                instances.forEach { instance ->
+                    Card(Modifier.fillMaxWidth().height(96.dp), colors = CardDefaults.cardColors(containerColor = RefPanel), shape = RoundedCornerShape(18.dp)) {
+                        Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF343841)), contentAlignment = Alignment.Center) {
+                                Text(if (instance.loader == null) "▣" else "◇", color = RefText, style = MaterialTheme.typography.headlineSmall)
                             }
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(instance.name, color = RefText, style = MaterialTheme.typography.titleLarge)
+                                Text("Minecraft " + instance.minecraftVersion + (instance.loader?.let { "  ·  " + it } ?: "  ·  Vanilla"), color = RefMuted)
+                            }
+                            OutlinedButton(onClick = {}) { Text("EDIT") }
+                            Spacer(Modifier.width(8.dp)); Button(onClick = {}) { Text("PLAY") }
+                            Spacer(Modifier.width(8.dp)); Text("⋮", color = RefMuted, style = MaterialTheme.typography.titleLarge)
                         }
                     }
                 }
             }
         }
-        if (showCreate) {
-            CreateInstanceReferenceDialog(
-                onDismiss = { showCreate = false },
-                onCreate = { id, name, version, loader ->
-                    api.createInstance(id, name, version, loader)
-                    instances = api.listInstances()
-                    showCreate = false
-                }
-            )
-        }
     }
 }
 
+@Composable
+fun CreateVersionReferenceScreen(onBack: () -> Unit, onCreate: (String, String, String, String?) -> Unit) {
+    var loader by remember { mutableStateOf("Forge") }
+    var version by remember { mutableStateOf("1.21") }
+    var profileName by remember { mutableStateOf("Forge 1.21") }
+    var customId by remember { mutableStateOf("forge-1-21") }
+
+    val loaderSubtitle = when (loader) {
+        "Fabric" -> "0.16.14 · auto"
+        "Forge" -> "1.21-51.0.0"
+        "NeoForge" -> "21.1.0 · auto"
+        "Quilt" -> "0.24.0 · auto"
+        "OptiFine" -> "OptiFine HD U K2 pre1"
+        else -> "Vanilla"
+    }
+
+    Box(Modifier.fillMaxSize().background(Color(0xFF090A0F))) {
+        Column(Modifier.fillMaxSize().padding(start = 145.dp, end = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(Modifier.fillMaxWidth().height(104.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(onClick = onBack, modifier = Modifier.size(72.dp), shape = RoundedCornerShape(22.dp), contentPadding = PaddingValues(0.dp)) {
+                    Text("‹", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                }
+                Spacer(Modifier.width(24.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Create Version", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                    Text("CUSTOM PROFILE ARCHITECT", color = RefMuted, style = MaterialTheme.typography.labelLarge)
+                }
+                Surface(shape = RoundedCornerShape(24.dp), color = Color.Transparent, border = ButtonDefaults.outlinedButtonBorder) {
+                    Text("CUSTOM", color = RefText, modifier = Modifier.padding(horizontal = 24.dp, vertical = 11.dp))
+                }
+            }
+
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xD92D2F35)), shape = RoundedCornerShape(28.dp)) {
+                Column(Modifier.padding(32.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    Text("PROFILE IDENTITY", color = RefMuted, style = MaterialTheme.typography.labelLarge)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(128.dp).clip(RoundedCornerShape(24.dp)).background(Color(0xFF343841)), contentAlignment = Alignment.Center) {
+                            Text(when (loader) { "Forge" -> "F"; "Fabric" -> "FAB"; "NeoForge" -> "NF"; "Quilt" -> "Q"; "OptiFine" -> "OF"; else -> "M" }, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.displaySmall)
+                        }
+                        Spacer(Modifier.width(28.dp))
+                        OutlinedTextField(value = profileName, onValueChange = { profileName = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, textStyle = MaterialTheme.typography.titleLarge, shape = RoundedCornerShape(20.dp))
+                    }
+                    Text("Tap the tile to choose a profile icon", color = RefMuted)
+                }
+            }
+
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xD91F2025)), shape = RoundedCornerShape(28.dp)) {
+                Column(Modifier.padding(32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("MOD LOADER ENGINE", color = RefText, style = MaterialTheme.typography.headlineSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        listOf("Fabric", "Forge", "NeoForge", "Quilt", "OptiFine").forEach { item ->
+                            val selected = loader == item
+                            Card(onClick = { loader = item; profileName = "${item} ${version}"; customId = item.lowercase() + "-" + version.replace(".", "-") }, modifier = Modifier.weight(1f).height(58.dp), colors = CardDefaults.cardColors(containerColor = if (selected) Color(0xFFE5E9F0) else Color(0xFF17191F)), shape = RoundedCornerShape(16.dp)) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(item, color = if (selected) Color(0xFF16181E) else RefText) }
+                            }
+                        }
+                    }
+                    Text("${loader.uppercase()} LOADER", color = RefMuted, style = MaterialTheme.typography.labelLarge)
+                    Surface(Modifier.fillMaxWidth(), color = Color(0xFF111217), shape = RoundedCornerShape(22.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(loaderSubtitle, color = RefText, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.weight(1f)); Text("⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+                    Text("MINECRAFT VERSION", color = RefText, style = MaterialTheme.typography.headlineSmall)
+                    Surface(Modifier.fillMaxWidth(), color = Color(0xFF111217), shape = RoundedCornerShape(22.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("▣", color = RefText, style = MaterialTheme.typography.titleLarge); Spacer(Modifier.width(14.dp))
+                            Text(version, color = RefText, style = MaterialTheme.typography.titleMedium); Spacer(Modifier.weight(1f))
+                            Text("⌄", color = RefMuted, style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+                    Text("Pick a loader build, then a compatible Minecraft version — the profile is created right here.", color = RefMuted)
+                }
+            }
+
+            Card(Modifier.fillMaxWidth().height(124.dp), colors = CardDefaults.cardColors(containerColor = Color(0xE915171D)), shape = RoundedCornerShape(28.dp)) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 30.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Ready to create", color = RefText, style = MaterialTheme.typography.titleLarge)
+                        Text("${version}  ·  ${loaderSubtitle}", color = RefMuted)
+                    }
+                    Button(onClick = { onCreate(customId.ifBlank { "custom-" + version.replace(".", "-") }, profileName.ifBlank { "Minecraft ${version}" }, version, loader.ifBlank { null }) }, modifier = Modifier.width(310.dp).height(72.dp), shape = RoundedCornerShape(40.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE7EBF2), contentColor = Color(0xFF17191F))) {
+                        Text(if (loader == "OptiFine") "DOWNLOAD & CREATE" else "CREATE", fontWeight = FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit(1.5f, androidx.compose.ui.unit.TextUnitType.Sp))
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun CreateInstanceReferenceDialog(
     onDismiss: () -> Unit,
