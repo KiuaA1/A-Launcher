@@ -6,6 +6,7 @@ pub mod instance;
 pub mod launch;
 pub mod manifest;
 pub mod mojang;
+pub mod plan;
 pub mod process;
 pub mod resolver;
 pub mod runtime;
