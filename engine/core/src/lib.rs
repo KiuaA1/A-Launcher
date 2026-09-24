@@ -19,7 +19,7 @@ impl LaunchEvent {
  pub fn exited(code:i32)->Self { Self{state:LaunchState::Exited,message:format!("Minecraft exited with code {code}"),timestamp_ms:SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64,exit_code:Some(code)} }
 }
 
-pub mod artifacts;
+pub mod api;\npub mod artifacts;
 pub mod arguments;
 pub mod cache;
 pub mod classpath;
