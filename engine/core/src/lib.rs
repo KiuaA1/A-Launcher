@@ -28,6 +28,7 @@ pub mod engine;
 pub mod error;
 pub mod fs;
 pub mod instance;
+pub mod instances;
 pub mod launch;
 pub mod manifest;
 pub mod mojang;
