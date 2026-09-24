@@ -10,3 +10,4 @@ serde_json = "1"
 sha1 = "0.10"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "stream"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+zip = "6"
