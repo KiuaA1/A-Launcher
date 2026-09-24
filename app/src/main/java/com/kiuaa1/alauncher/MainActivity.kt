@@ -64,14 +64,17 @@ private fun LauncherShell(api: LauncherApi) {
             2 -> BrowseResourcesReferenceScreen()
             3 -> AccountsReferenceScreen()
             4 -> SettingsReferenceScreen()
-            else -> PlaceholderScreen("A-Launcher")
+                else -> PlaceholderScreen("A-Launcher")
+            }
         }
 
-        ReferenceSidebar(
-            selected = selected,
-            onSelect = { selected = it },
-            modifier = Modifier.align(Alignment.CenterStart)
-        )
+        if (runtimeScreen == 0) {
+            ReferenceSidebar(
+                selected = selected,
+                onSelect = { selected = it },
+                modifier = Modifier.align(Alignment.CenterStart)
+            )
+        }
     }
 }
 
