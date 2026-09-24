@@ -9,7 +9,7 @@ use crate::{
  resolver::{maven_path, Resolution, TargetPlatform},
  download::DownloadTransport,
  classpath::{Classpath, build_classpath},
- native::extract_native_jar,
+ native::{extract_native_jar, prepare_native_directory},
  artifacts::download_resolution as download_artifacts,
  plan::LaunchPreparation,
  runtime::RuntimeManager,
@@ -69,7 +69,7 @@ impl LauncherEngine {
     .ok_or_else(||EngineError::InvalidLaunchPlan(format!("cannot derive native path for {}",artifact.id)))?;
    let jar=self.storage.libraries.join(&rel);
    if !jar.is_file(){return Err(EngineError::DownloadFailed(format!("native JAR missing: {}",jar.display())));}
-   extract_native_jar(&jar,&self.storage.natives.join(instance_id))?;
+   extracted += extract_native_jar(&jar,&native_dir)?;
   }
   Ok(())
  }
