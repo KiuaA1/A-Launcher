@@ -41,9 +41,7 @@ impl MojangResolver {
             transport.fetch_to(&entry.url, &destination)?;
         }
 
-        let version_json = std::fs::read_to_string(&destination)
-            .map_err(|e| EngineError::ManifestInvalid(format!("read version metadata: {e}")))?;
-        let parsed = parse_version_json(&version_json)?;
+        let parsed = self.resolve_inheritance_chain(version, transport, metadata_root)?;
 
         if parsed.id != version {
             return Err(EngineError::ManifestInvalid(format!(
@@ -52,20 +50,9 @@ impl MojangResolver {
             )));
         }
 
-        resolution_from_version_json_for(&version_json, platform)
+        resolution_from_version_json_value(&parsed, platform)
     }
-}
-
-impl VersionResolver for MojangResolver {
-    fn resolve(&self, version: &str) -> Result<Resolution, EngineError> {
-        let manifest = parse_manifest_json(&self.manifest_json)?;
-        let entry = manifest.versions.iter().find(|v| v.id == version)
-            .ok_or_else(|| EngineError::VersionNotFound(version.into()))?;
-        Err(EngineError::ResolutionRequiresMetadata(entry.url.clone()))
-    }
-}
-
-pub fn resolve_inheritance_chain<T: crate::download::DownloadTransport>(
+    pub fn resolve_inheritance_chain<T: crate::download::DownloadTransport>(
     &self,
     version: &str,
     transport: &T,
@@ -108,6 +95,17 @@ pub fn resolve_inheritance_chain<T: crate::download::DownloadTransport>(
     Ok(merged)
 }
 
+}
+
+impl VersionResolver for MojangResolver {
+    fn resolve(&self, version: &str) -> Result<Resolution, EngineError> {
+        let manifest = parse_manifest_json(&self.manifest_json)?;
+        let entry = manifest.versions.iter().find(|v| v.id == version)
+            .ok_or_else(|| EngineError::VersionNotFound(version.into()))?;
+        Err(EngineError::ResolutionRequiresMetadata(entry.url.clone()))
+    }
+}
+
 pub fn resolve_inheritance(child_json: &str, parent_json: &str) -> Result<VersionJson, EngineError> {
     let child = parse_version_json(child_json)?;
     let parent = parse_version_json(parent_json)?;
@@ -115,14 +113,18 @@ pub fn resolve_inheritance(child_json: &str, parent_json: &str) -> Result<Versio
 }
 
 pub fn resolution_from_version_json(json: &str) -> Result<Resolution, EngineError> {
-    resolution_from_version_json_for(json, crate::resolver::TargetPlatform::android_arm64())
+    let v = parse_version_json(json)?;
+    resolution_from_version_json_value(&v, crate::resolver::TargetPlatform::android_arm64())
 }
+fn resolution_from_version_json_value(
+    v: &VersionJson,
+    platform: crate::resolver::TargetPlatform,
+) -> Result<Resolution, EngineError> {
 
 pub fn resolution_from_version_json_for(
     json: &str,
     platform: crate::resolver::TargetPlatform,
 ) -> Result<Resolution, EngineError> {
-    let v = parse_version_json(json)?;
     let client = MinecraftArtifact {
         id: v.id.clone(), url: v.downloads.client.url, sha1: Some(v.downloads.client.sha1),
         size: Some(v.downloads.client.size), path: v.downloads.client.path,
