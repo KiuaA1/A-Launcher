@@ -1,38 +1,60 @@
-use crate::{error::EngineError,launch::LaunchPlan,LaunchEvent,LaunchState};
-use std::{io::{BufRead,BufReader},process::{Child,Command,Stdio},sync::{Arc,Mutex,mpsc::{self,Receiver}}};
+use crate::{error::EngineError,launch::LaunchPlan};
+use std::{collections::VecDeque,io::{BufRead,BufReader},process::{Child,Command,Stdio},sync::{Arc,Mutex}};
 
 pub trait ProcessManager {
  fn validate_launch(&self,plan:&LaunchPlan)->Result<(),EngineError>;
  fn spawn(&self,plan:&LaunchPlan)->Result<ManagedProcess,EngineError>;
 }
-
 pub struct DefaultProcessManager;
 
-pub struct ManagedProcess { child:Arc<Mutex<Option<Child>>> }\n\n#[derive(Debug,Clone,PartialEq,Eq)]\npub enum ProcessEvent { Started, Stdout(String), Stderr(String), Exited(i32) }
-
+#[derive(Debug,Clone,PartialEq,Eq)]
+pub enum ProcessEvent { Started, Stdout(String), Stderr(String), Exited(i32) }
 #[derive(Debug,Clone,Copy,PartialEq,Eq)]
 pub enum ProcessState { Running,Exited(i32),Signaled,Unavailable }
 
+struct ProcessInner {
+ child:Option<Child>,
+ events:VecDeque<ProcessEvent>,
+ started:bool,
+ exited:bool,
+}
+pub struct ManagedProcess { inner:Arc<Mutex<ProcessInner>> }
+
 impl ManagedProcess {
- pub fn events(&self) -> Receiver<ProcessEvent> {\n  let (tx,rx)=mpsc::channel();\n  let child_arc=self.child.clone();\n  std::thread::spawn(move || {\n   let mut guard=match child_arc.lock(){Ok(g)=>g,Err(_)=>return};\n   let child=match guard.as_mut(){Some(c)=>c,None=>return};\n   let stdout=child.stdout.take(); let stderr=child.stderr.take();\n   drop(guard);\n   let _=tx.send(ProcessEvent::Started);\n   let mut handles=Vec::new();\n   if let Some(out)=stdout { let txc=tx.clone(); handles.push(std::thread::spawn(move || { for line in BufReader::new(out).lines().flatten(){ let _=txc.send(ProcessEvent::Stdout(line)); } })); }\n   if let Some(err)=stderr { let txc=tx.clone(); handles.push(std::thread::spawn(move || { for line in BufReader::new(err).lines().flatten(){ let _=txc.send(ProcessEvent::Stderr(line)); } })); }\n   for h in handles { let _=h.join(); }\n   let mut guard=match child_arc.lock(){Ok(g)=>g,Err(_)=>return};\n   if let Some(child)=guard.as_mut(){ if let Ok(status)=child.wait(){ let _=tx.send(ProcessEvent::Exited(status.code().unwrap_or(-1))); } }\n  });\n  rx\n }\n\n pub fn try_state(&self)->Result<ProcessState,EngineError>{
-  let mut guard=self.child.lock().map_err(|_|EngineError::RuntimeUnavailable("process lock poisoned".into()))?;
-  let child=guard.as_mut().ok_or_else(||EngineError::RuntimeUnavailable("process handle unavailable".into()))?;
+ pub fn drain_events(&self)->Vec<ProcessEvent>{
+  let mut inner=match self.inner.lock(){Ok(v)=>v,Err(_)=>return Vec::new()};
+  inner.events.drain(..).collect()
+ }
+ pub fn try_state(&self)->Result<ProcessState,EngineError>{
+  let mut inner=self.inner.lock().map_err(|_|EngineError::RuntimeUnavailable("process lock poisoned".into()))?;
+  let child=inner.child.as_mut().ok_or_else(||EngineError::RuntimeUnavailable("process handle unavailable".into()))?;
   match child.try_wait().map_err(|e|EngineError::RuntimeUnavailable(format!("check process state: {e}")))? {
-   Some(status)=>Ok(ProcessState::Exited(status.code().unwrap_or(-1))),
-   None=>Ok(ProcessState::Running),
+   Some(status)=>{let code=status.code().unwrap_or(-1);if !inner.exited{inner.events.push_back(ProcessEvent::Exited(code));inner.exited=true;}Ok(ProcessState::Exited(code))},
+   None=>Ok(ProcessState::Running)
   }
  }
  pub fn wait(&self)->Result<ProcessState,EngineError>{
-  let mut guard=self.child.lock().map_err(|_|EngineError::RuntimeUnavailable("process lock poisoned".into()))?;
-  let child=guard.as_mut().ok_or_else(||EngineError::RuntimeUnavailable("process handle unavailable".into()))?;
+  let mut inner=self.inner.lock().map_err(|_|EngineError::RuntimeUnavailable("process lock poisoned".into()))?;
+  let child=inner.child.as_mut().ok_or_else(||EngineError::RuntimeUnavailable("process handle unavailable".into()))?;
   let status=child.wait().map_err(|e|EngineError::RuntimeUnavailable(format!("wait for process: {e}")))?;
-  Ok(ProcessState::Exited(status.code().unwrap_or(-1)))
+  let code=status.code().unwrap_or(-1);
+  if !inner.exited{inner.events.push_back(ProcessEvent::Exited(code));inner.exited=true;}
+  Ok(ProcessState::Exited(code))
  }
  pub fn kill(&self)->Result<(),EngineError>{
-  let mut guard=self.child.lock().map_err(|_|EngineError::RuntimeUnavailable("process lock poisoned".into()))?;
-  let child=guard.as_mut().ok_or_else(||EngineError::RuntimeUnavailable("process handle unavailable".into()))?;
+  let mut inner=self.inner.lock().map_err(|_|EngineError::RuntimeUnavailable("process lock poisoned".into()))?;
+  let child=inner.child.as_mut().ok_or_else(||EngineError::RuntimeUnavailable("process handle unavailable".into()))?;
   child.kill().map_err(|e|EngineError::RuntimeUnavailable(format!("kill process: {e}")))
  }
+}
+
+fn start_event_pump(inner:Arc<Mutex<ProcessInner>>,stdout:Option<std::process::ChildStdout>,stderr:Option<std::process::ChildStderr>){
+ std::thread::spawn(move||{
+  let mut handles=Vec::new();
+  if let Some(out)=stdout{let shared=inner.clone();handles.push(std::thread::spawn(move||{for line in BufReader::new(out).lines().flatten(){if let Ok(mut i)=shared.lock(){i.events.push_back(ProcessEvent::Stdout(line));}}}));}
+  if let Some(err)=stderr{let shared=inner.clone();handles.push(std::thread::spawn(move||{for line in BufReader::new(err).lines().flatten(){if let Ok(mut i)=shared.lock(){i.events.push_back(ProcessEvent::Stderr(line));}}}));}
+  for h in handles{let _=h.join();}
+ });
 }
 
 impl ProcessManager for DefaultProcessManager {
@@ -40,11 +62,12 @@ impl ProcessManager for DefaultProcessManager {
  fn spawn(&self,plan:&LaunchPlan)->Result<ManagedProcess,EngineError>{
   self.validate_launch(plan)?;
   let mut command=Command::new(&plan.java_executable);
-  command.args(&plan.jvm_args);
-  command.args(&plan.game_args);
-  command.current_dir(&plan.game_directory);
-  command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
-  let child=command.spawn().map_err(|e|EngineError::RuntimeUnavailable(format!("spawn Java process: {e}")))?;
-  Ok(ManagedProcess{child:Arc::new(Mutex::new(Some(child)))})
+  command.args(&plan.jvm_args).args(&plan.game_args).current_dir(&plan.game_directory)
+   .stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+  let mut child=command.spawn().map_err(|e|EngineError::RuntimeUnavailable(format!("spawn Java process: {e}")))?;
+  let stdout=child.stdout.take();let stderr=child.stderr.take();
+  let inner=Arc::new(Mutex::new(ProcessInner{child:Some(child),events:VecDeque::from([ProcessEvent::Started]),started:true,exited:false}));
+  start_event_pump(inner.clone(),stdout,stderr);
+  Ok(ManagedProcess{inner})
  }
 }
