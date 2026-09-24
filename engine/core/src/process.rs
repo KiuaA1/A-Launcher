@@ -62,7 +62,7 @@ impl ProcessManager for DefaultProcessManager {
  fn spawn(&self,plan:&LaunchPlan)->Result<ManagedProcess,EngineError>{
   self.validate_launch(plan)?;
   let mut command=Command::new(&plan.java_executable);
-  command.args(&plan.jvm_args).args(&plan.game_args).current_dir(&plan.game_directory)
+  command.args(&plan.jvm_args).args(&plan.game_args).current_dir(&plan.game_directory).envs(&plan.environment)
    .stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
   let mut child=command.spawn().map_err(|e|EngineError::RuntimeUnavailable(format!("spawn Java process: {e}")))?;
   let stdout=child.stdout.take();let stderr=child.stderr.take();
