@@ -470,30 +470,7 @@ private fun CreateInstanceReferenceDialog(
 
 @Composable
 fun SettingsReferenceScreen() {
-    var page by remember { mutableStateOf("Game") }
-    Row(Modifier.fillMaxSize()) {
-        Column(Modifier.width(250.dp).fillMaxHeight().padding(start = 145.dp, top = 28.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text("Settings", color = RefText, style = MaterialTheme.typography.headlineMedium)
-            Text("A-Launcher", color = RefMuted)
-            Spacer(Modifier.height(10.dp))
-            listOf("Game", "Advanced", "Cursor Studio", "Skin Studio").forEach { item ->
-                val active = page == item
-                Card(onClick = { page = item }, Modifier.fillMaxWidth().height(54.dp), colors = CardDefaults.cardColors(containerColor = if (active) Color(0xFFE9ECF2) else Color.Transparent), shape = RoundedCornerShape(14.dp)) {
-                    Box(Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
-                        Text(item, color = if (active) Color(0xFF15171D) else RefText)
-                    }
-                }
-            }
-        }
-        Box(Modifier.weight(1f).fillMaxHeight()) {
-            when (page) {
-                "Game" -> GameReferenceScreen()
-                "Advanced" -> AdvancedReferenceScreen()
-                "Cursor Studio" -> CursorStudioReferenceScreen()
-                "Skin Studio" -> SkinStudioReferenceScreen()
-            }
-        }
-    }
+    GameReferenceScreen()
 }
 
 @Composable
@@ -526,12 +503,130 @@ fun AdvancedReferenceScreen() {
 
 @Composable
 fun GameReferenceScreen() {
-    ReferencePage("Game", "RAM, performance mode, Java") {
-        ReferenceRow("Quick Device Optimizer", "1-click auto tuning for RAM, resolution, vsync & FPS.", "›")
-        ReferenceRow("4GB RAM Phone (Budget / Low-End)", "Recommended for lower-memory devices.", "APPLY")
-        ReferenceRow("6GB RAM Phone (Balanced / Mid-Range)", "Balanced memory profile.", "APPLY")
-        ReferenceRow("8GB+ RAM Phone (Flagship / Ultra)", "Maximum performance profile.", "APPLY")
-        ReferenceRow("RAM for Minecraft", "Allocated heap for Minecraft and mods.", "1024 MB")
+    var ram by remember { mutableIntStateOf(1024) }
+    var profile by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        Modifier.fillMaxSize().padding(start = 100.dp, top = 26.dp, end = 30.dp, bottom = 26.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(58.dp).clip(RoundedCornerShape(30.dp))
+                    .background(Color(0xFF171A22)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("‹", color = RefText, style = MaterialTheme.typography.headlineMedium)
+            }
+            Spacer(Modifier.width(18.dp))
+            Column {
+                Text("Game", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                Text("RAM, performance mode, Java", color = RefMuted, style = MaterialTheme.typography.titleMedium)
+            }
+        }
+
+        Text("Game", color = RefMuted, style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = 12.dp, top = 6.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xD9161921)),
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(52.dp).clip(RoundedCornerShape(15.dp)).background(Color(0xFF090B10)),
+                        contentAlignment = Alignment.Center
+                    ) { Text("⌘", color = RefText, style = MaterialTheme.typography.headlineSmall) }
+                    Spacer(Modifier.width(18.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Quick Device Optimizer", color = RefText, style = MaterialTheme.typography.titleLarge)
+                        Text("1-Click auto-tuning for RAM, resolution, renderer, VSync & FSR", color = RefMuted)
+                    }
+                }
+
+                GameProfileRow("4GB RAM Phone (Budget / Low-End)",
+                    "1536 MB RAM · 70% Resolution · GL4ES · 50% FSR · Performance Mode",
+                    "4G", profile == "4G") { profile = "4G"; ram = 1536 }
+
+                GameProfileRow("6GB RAM Phone (Balanced / Mid-Range)",
+                    "3072 MB RAM · 85% Resolution · MobileGlues · 25% FSR · Balanced",
+                    "6G", profile == "6G") { profile = "6G"; ram = 3072 }
+
+                GameProfileRow("8GB+ RAM Phone (Flagship / Ultra)",
+                    "4096 MB RAM · 100% Native Res · Zink/MobileGlues · Maximum Mode",
+                    "8G+", profile == "8G+") { profile = "8G+"; ram = 4096 }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xD9161921)),
+            shape = RoundedCornerShape(0.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 22.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("▦", color = RefMuted, style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.width(18.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("RAM for Minecraft", color = RefText, style = MaterialTheme.typography.headlineSmall)
+                    Text("Allocated heap for Minecraft and mods", color = RefMuted, style = MaterialTheme.typography.titleMedium)
+                }
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color(0xFF20242E)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("−", color = RefText, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+                        Text("$ram MB", color = RefText, style = MaterialTheme.typography.titleLarge)
+                        Text("+", color = RefText, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+                    }
+                }
+            }
+        }
+
+        Text("The launcher applies the selected profile to resolution, renderer, VSync, FSR and Java memory.", color = RefMuted, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun GameProfileRow(
+    title: String,
+    subtitle: String,
+    badge: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(92.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) Color(0xFF242934) else Color(0x071A1D24)
+        ),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier.size(54.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF0B0D12)),
+                contentAlignment = Alignment.Center
+            ) { Text(badge, color = RefText, style = MaterialTheme.typography.titleMedium) }
+            Spacer(Modifier.width(18.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, color = RefText, style = MaterialTheme.typography.titleLarge)
+                Text(subtitle, color = RefMuted, style = MaterialTheme.typography.bodyMedium)
+            }
+            OutlinedButton(
+                onClick = onClick,
+                shape = RoundedCornerShape(18.dp),
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+            ) { Text(if (selected) "APPLIED" else "APPLY") }
+        }
     }
 }
 
