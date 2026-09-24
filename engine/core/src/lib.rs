@@ -1,3 +1,4 @@
+pub mod artifacts;
 pub mod cache;
 pub mod download;
 pub mod error;
