@@ -57,6 +57,7 @@ private fun LauncherShell(api: LauncherApi) {
                 selectedInstance = selectedInstance,
                 onSelectInstance = { selectedInstance = it },
                 onInstances = { selected = 1 },
+                onAccounts = { selected = 3 },
                 launchStatus = launchStatus,
                 onLaunch = { if (selectedInstance.isNotBlank()) launchStatus = api.launch(selectedInstance) }
             )
@@ -84,6 +85,7 @@ private fun HomeScreen(
     selectedInstance: String,
     onSelectInstance: (String) -> Unit,
     onInstances: () -> Unit,
+    onAccounts: () -> Unit,
     launchStatus: LaunchStatus,
     onLaunch: () -> Unit
 ) {
@@ -120,7 +122,13 @@ private fun HomeScreen(
     }
 
     if (accountSwitcher) {
-        AccountSwitcherReferenceDialog(onDismiss = { accountSwitcher = false })
+        AccountSwitcherReferenceDialog(
+            onDismiss = { accountSwitcher = false },
+            onAddAccount = {
+                accountSwitcher = false
+                onAccounts()
+            }
+        )
     }
 }
 
@@ -202,7 +210,7 @@ private fun ReferenceTopBar(onAccountClick: () -> Unit) {
 }
 
 @Composable
-private fun AccountSwitcherReferenceDialog(onDismiss: () -> Unit) {
+private fun AccountSwitcherReferenceDialog(onDismiss: () -> Unit, onAddAccount: () -> Unit) {
     Box(
         Modifier.fillMaxSize().background(Color(0x99000000)),
         contentAlignment = Alignment.Center
@@ -236,7 +244,7 @@ private fun AccountSwitcherReferenceDialog(onDismiss: () -> Unit) {
                 HorizontalDivider(color = Color(0x332F3440))
 
                 Card(
-                    onClick = { },
+                    onClick = onAddAccount,
                     modifier = Modifier.fillMaxWidth().height(92.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0x20272B34)),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x55484D59)),
