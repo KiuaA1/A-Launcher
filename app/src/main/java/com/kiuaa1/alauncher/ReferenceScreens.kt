@@ -934,23 +934,177 @@ private fun GameProfileRow(
 
 @Composable
 fun SkinStudioReferenceScreen() {
-    ReferencePage("Skin Studio", "Edit • Export • Equip skin") {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Card(colors = CardDefaults.cardColors(containerColor = RefPanel2), modifier = Modifier.weight(1f)) {
-                Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
-                    Text("Minecraft Skin Preview", color = RefMuted)
+    var slot by remember { mutableIntStateOf(2) }
+    var username by remember { mutableStateOf("") }
+    var capeSelected by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    Box(Modifier.fillMaxSize().background(Color(0xFF101116))) {
+        Column(
+            Modifier.fillMaxSize().padding(start = 145.dp, top = 20.dp, end = 22.dp, bottom = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().height(88.dp).background(Color(0xFF171920), RoundedCornerShape(2.dp)).padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(58.dp),
+                    shape = RoundedCornerShape(29.dp),
+                    color = Color(0xFF101B28),
+                    onClick = {}
+                ) { Box(contentAlignment = Alignment.Center) { Text("←", color = Color(0xFF5D9BFF), style = MaterialTheme.typography.headlineMedium) } }
+                Spacer(Modifier.width(18.dp))
+                Column {
+                    Text("Skin Studio", color = RefText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Slot $slot  •  Empty slot", color = RefMuted, style = MaterialTheme.typography.titleMedium)
+                }
+                Spacer(Modifier.weight(1f))
+                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF1B1D25)) {
+                    Text("LOCAL SKIN SERVER", color = RefMuted, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp), style = MaterialTheme.typography.labelMedium)
                 }
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ReferenceRow("Current Skin", "Slot 1 • active", "ACTIVE")
-                ReferenceRow("Skin Slot 2", "Empty", "ADD")
-                ReferenceRow("Skin Slot 3", "Empty", "ADD")
-                Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = RefAccent)) { Text("Import Skin") }
+
+            HorizontalDivider(color = Color(0xFF292B32))
+
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1.03f).fillMaxHeight(),
+                    colors = CardDefaults.cardColors(containerColor = Color.Black),
+                    shape = RoundedCornerShape(0.dp)
+                ) {
+                    Box(Modifier.fillMaxSize()) {
+                        Surface(
+                            modifier = Modifier.padding(20.dp),
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color(0xFF1E212B)
+                        ) {
+                            Text("EMPTY SLOT", color = RefMuted, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), style = MaterialTheme.typography.labelMedium)
+                        }
+
+                        Surface(
+                            modifier = Modifier.align(Alignment.TopEnd).padding(18.dp).size(56.dp),
+                            shape = RoundedCornerShape(28.dp),
+                            color = Color(0xFF202531),
+                            onClick = {}
+                        ) { Box(contentAlignment = Alignment.Center) { Text("⌁", color = RefText) } }
+
+                        PixelSkinPreview(Modifier.align(Alignment.Center))
+
+                        Column(
+                            Modifier.align(Alignment.BottomStart).padding(22.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text("No skin in selected slot", color = RefText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("Choose ADD to import a Minecraft skin PNG", color = Color(0xFF777C87), style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+
+                Column(Modifier.weight(.97f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF171920)),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("CAPE", color = RefMuted, style = MaterialTheme.typography.labelLarge, letterSpacing = androidx.compose.ui.unit.TextUnit(1.8f, androidx.compose.ui.unit.TextUnitType.Sp))
+                                Spacer(Modifier.weight(1f))
+                                Text("optional", color = Color(0xFF666B76), style = MaterialTheme.typography.labelMedium)
+                            }
+                            Text(if (capeSelected) "Custom cape selected" else "No custom cape selected", color = RefText, style = MaterialTheme.typography.titleMedium)
+                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                Button(
+                                    onClick = { capeSelected = true },
+                                    modifier = Modifier.height(70.dp).weight(1.1f),
+                                    shape = RoundedCornerShape(17.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (capeSelected) Color(0xFFDDE1E8) else Color(0xFFDDE1E8), contentColor = Color(0xFF15171D))
+                                ) { Text("BROWSE CAPES", fontWeight = FontWeight.Bold) }
+                                OutlinedButton(onClick = { message = "Import PNG" }, modifier = Modifier.height(70.dp).weight(1f), shape = RoundedCornerShape(17.dp)) { Text("IMPORT PNG", fontWeight = FontWeight.Bold) }
+                                OutlinedButton(onClick = { capeSelected = false }, modifier = Modifier.height(70.dp).weight(.9f), shape = RoundedCornerShape(17.dp)) { Text("CLEAR", fontWeight = FontWeight.Bold) }
+                            }
+                        }
+                    }
+
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF171920)),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("GRAB A PLAYER SKIN", color = RefMuted, style = MaterialTheme.typography.labelLarge, letterSpacing = androidx.compose.ui.unit.TextUnit(1.8f, androidx.compose.ui.unit.TextUnitType.Sp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = username,
+                                    onValueChange = { username = it },
+                                    placeholder = { Text("Minecraft username", color = Color(0xFF686D79)) },
+                                    modifier = Modifier.weight(1f).height(70.dp),
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(17.dp)
+                                )
+                                Spacer(Modifier.width(14.dp))
+                                Button(
+                                    onClick = { message = if (username.isBlank()) "Enter a Minecraft username first" else "Skin fetched for $username" },
+                                    modifier = Modifier.width(130.dp).height(70.dp),
+                                    shape = RoundedCornerShape(17.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDDE1E8), contentColor = Color(0xFF15171D))
+                                ) { Text("FETCH", fontWeight = FontWeight.Bold) }
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = { message = "Active skin set to slot $slot" },
+                        modifier = Modifier.fillMaxWidth().height(76.dp),
+                        shape = RoundedCornerShape(38.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDDE1E8), contentColor = Color(0xFF15171D))
+                    ) { Text("SET AS ACTIVE SKIN", fontWeight = FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit(1.6f, androidx.compose.ui.unit.TextUnitType.Sp), style = MaterialTheme.typography.titleMedium) }
+
+                    Button(
+                        onClick = { message = "All skin slots reset" },
+                        modifier = Modifier.fillMaxWidth().height(70.dp),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1C23), contentColor = Color(0xFF9EA3AE))
+                    ) { Text("RESET ALL SLOTS", fontWeight = FontWeight.Bold, letterSpacing = androidx.compose.ui.unit.TextUnit(1.4f, androidx.compose.ui.unit.TextUnitType.Sp)) }
+                }
             }
+        }
+
+        message?.let { text ->
+            AlertDialog(
+                onDismissRequest = { message = null },
+                title = { Text(text) },
+                confirmButton = { TextButton(onClick = { message = null }) { Text("OK") } }
+            )
         }
     }
 }
 
+@Composable
+private fun PixelSkinPreview(modifier: Modifier = Modifier) {
+    Column(modifier.width(190.dp).height(410.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(92.dp).background(Color(0xFF7A4B2C))) {
+            Box(Modifier.fillMaxWidth().height(25.dp).background(Color(0xFF24252A)))
+            Box(Modifier.size(16.dp).background(Color.White).align(Alignment.TopStart).offset(20.dp, 43.dp))
+            Box(Modifier.size(16.dp).background(Color.White).align(Alignment.TopEnd).offset((-20).dp, 43.dp))
+            Box(Modifier.size(18.dp).background(Color(0xFF4A2A1C)).align(Alignment.BottomCenter).offset(y = (-14).dp))
+        }
+        Row {
+            Box(Modifier.width(48.dp).height(112.dp).background(Color(0xFF55731D)))
+            Box(Modifier.width(94.dp).height(112.dp).background(Color(0xFF315C9A)))
+            Box(Modifier.width(48.dp).height(112.dp).background(Color(0xFF55731D)))
+        }
+        Row {
+            Box(Modifier.width(58.dp).height(125.dp).background(Color(0xFF25334C)))
+            Spacer(Modifier.width(20.dp))
+            Box(Modifier.width(58.dp).height(125.dp).background(Color(0xFF25334C)))
+        }
+    }
+}
 @Composable
 private fun ReferencePage(title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
     Column(
