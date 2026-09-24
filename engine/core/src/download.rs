@@ -111,10 +111,18 @@ impl ReqwestDownloadTransport {
             .map_err(|e| EngineError::DownloadFailed(format!("HTTP request: {e}")))?;
         let response = response.error_for_status()
             .map_err(|e| EngineError::DownloadFailed(format!("HTTP status: {e}")))?;
-        let bytes = response.bytes().await
-            .map_err(|e| EngineError::DownloadFailed(format!("read response: {e}")))?;
-        tokio::fs::write(destination, &bytes).await
-            .map_err(|e| EngineError::DownloadFailed(format!("write response: {e}")))
+        let mut file = tokio::fs::File::create(destination).await
+            .map_err(|e| EngineError::DownloadFailed(format!("create response file: {e}")))?;
+        let mut stream = response.bytes_stream();
+        use futures_util::StreamExt;
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk
+                .map_err(|e| EngineError::DownloadFailed(format!("read response chunk: {e}")))?;
+            tokio::io::AsyncWriteExt::write_all(&mut file, &chunk).await
+                .map_err(|e| EngineError::DownloadFailed(format!("write response: {e}")))?;
+        }
+        tokio::io::AsyncWriteExt::flush(&mut file).await
+            .map_err(|e| EngineError::DownloadFailed(format!("flush response: {e}")))?
     }
 }
 
