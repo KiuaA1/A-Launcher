@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::{error::EngineError,fs::StorageLayout,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::{DownloadRequest,DownloadTransport,prepare_download},classpath::{Classpath,build_classpath},native::extract_native_jar,plan::LaunchPreparation,runtime::{RuntimeManager,JavaRuntime},manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan};
+use crate::{error::EngineError,fs::StorageLayout,LaunchEvent,LaunchState,mojang::MojangResolver,resolver::{Resolution,TargetPlatform},download::{DownloadRequest,DownloadTransport,prepare_download},classpath::{Classpath,build_classpath},native::extract_native_jar,plan::LaunchPreparation,runtime::RuntimeManager,manifest::VersionJson,arguments::LaunchContext,launch::LaunchPlan,process::{DefaultProcessManager,ManagedProcess,ProcessManager};
 
 #[derive(Debug,Clone)]
 pub struct LauncherEngine { pub storage:StorageLayout }
@@ -55,6 +55,14 @@ impl LauncherEngine {
   let required=prep.java_major_version;
   let selected=runtime.select(required,None)?;
   prep.build_launch_plan(&selected.executable.to_string_lossy(),&classpath,version.arguments.as_ref().ok_or_else(||EngineError::InvalidLaunchPlan("modern arguments are missing".into()))?,context)
+ }
+
+ pub fn launch(&self,plan:&LaunchPlan)->Result<(ManagedProcess,Vec<LaunchEvent>),EngineError>{
+  let manager=DefaultProcessManager;
+  manager.validate_launch(plan)?;
+  let process=manager.spawn(plan)?;
+  let events=vec![Self::event(LaunchState::Starting,"Minecraft process started"),Self::event(LaunchState::Running,"Minecraft is running")];
+  Ok((process,events))
  }
 
  pub fn prepare(&self)->Result<LaunchEvent,EngineError>{
