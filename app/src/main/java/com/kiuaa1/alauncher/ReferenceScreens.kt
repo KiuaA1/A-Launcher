@@ -20,224 +20,176 @@ private val RefAccent = Color(0xFF7C4DFF)
 
 @Composable
 fun AccountsReferenceScreen() {
-    var playerName by remember { mutableStateOf("") }
-    var created by remember { mutableStateOf(false) }
+    var dialog by remember { mutableStateOf<String?>(null) }
 
-    Row(
-        Modifier
-            .fillMaxSize()
-            .padding(start = 145.dp, top = 30.dp, end = 30.dp, bottom = 30.dp),
-        horizontalArrangement = Arrangement.spacedBy(28.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Card(
-            modifier = Modifier
-                .weight(0.88f)
-                .height(340.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xE915171D)),
-            shape = RoundedCornerShape(24.dp)
+    Box(Modifier.fillMaxSize().background(Color(0xFF071426))) {
+        Row(
+            Modifier.fillMaxSize().padding(start = 145.dp, top = 30.dp, end = 30.dp, bottom = 30.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.fillMaxSize()) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(58.dp)
-                        .background(Color(0xFF090A0F))
-                        .padding(horizontal = 26.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        Modifier
-                            .width(44.dp)
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFF2B2E38))
-                    )
-                    Spacer(Modifier.width(20.dp))
-                    Text(
-                        "P L A Y E R   B A D G E",
-                        color = RefMuted,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        "LOCAL",
-                        color = RefText,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFF111319))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-
-                HorizontalDivider(color = Color(0x332F3440))
-
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(28.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        Modifier
-                            .size(142.dp)
-                            .clip(RoundedCornerShape(25.dp))
-                            .background(
-                                androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                    listOf(
-                                        Color(0xFF24262A),
-                                        Color(0xFF70462D),
-                                        Color(0xFFC06B35)
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.BottomEnd
-                    ) {
+            Card(
+                Modifier.weight(.9f).height(452.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xE915171D)),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(Modifier.padding(34.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            Modifier
-                                .size(18.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(Color(0xFF111318))
-                                .padding(4.dp)
+                            Modifier.size(58.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF080A0F)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(50)).background(Color(0xFFE7E9ED)))
+                            Text("ID", color = RefText, style = MaterialTheme.typography.titleLarge)
                         }
+                        Spacer(Modifier.width(18.dp))
+                        Text("I D E N T I T Y   ·   S I G N   I N", color = RefMuted, style = MaterialTheme.typography.labelLarge)
                     }
 
-                    Spacer(Modifier.width(28.dp))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("N A M E", color = Color(0xFF6E7380), style = MaterialTheme.typography.labelSmall)
-                        Text(
-                            if (created && playerName.isNotBlank()) playerName else "Player",
-                            color = RefText,
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text("A C C E S S", color = Color(0xFF6E7380), style = MaterialTheme.typography.labelSmall)
-                        Text(
-                            "Offline & LAN worlds · skin from your\nfile or a matching Mojang name",
-                            color = RefMuted,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .background(Color(0xFF090A0F))
-                        .padding(horizontal = 28.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("CS LAUNCHER PLUS", color = Color(0xFF565B67), style = MaterialTheme.typography.labelSmall)
-                    Text("  ·  ", color = Color(0xFF343842))
-                    Text("NO PASSWORD", color = Color(0xFF565B67), style = MaterialTheme.typography.labelSmall)
-                    Spacer(Modifier.weight(1f))
-                    Text("▥▥▥▥▥▥▥", color = Color(0xFF565B67), style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.height(10.dp))
+                    Text("Who is playing?", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                    Text(
+                        "Pick how this launcher should identify you. You can add more accounts later from the account switcher.",
+                        color = RefMuted,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    HorizontalDivider(color = Color(0x332F3440))
+                    Text("•  Microsoft   — servers · skins · capes", color = RefMuted, style = MaterialTheme.typography.bodyLarge)
+                    Text("•  ely.by       — free skins · many servers", color = RefMuted, style = MaterialTheme.typography.bodyLarge)
+                    Text("○  Local        — offline / LAN only", color = RefMuted, style = MaterialTheme.typography.bodyLarge)
                 }
             }
-        }
 
-        Card(
-            modifier = Modifier
-                .weight(1.12f)
-                .height(485.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xE915171D)),
-            shape = RoundedCornerShape(24.dp)
-        ) {
             Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(34.dp),
+                Modifier.weight(1.1f).height(452.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Mint a local profile",
-                        color = RefText,
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        "${playerName.length} / 16",
-                        color = RefMuted,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF171A22))
-                            .padding(horizontal = 12.dp, vertical = 7.dp)
-                    )
-                }
+                AccountReferenceOption(
+                    title = "Microsoft account",
+                    subtitle = "Premium · full online play",
+                    badge = "1",
+                    selected = true
+                ) { dialog = "microsoft" }
 
+                AccountReferenceOption(
+                    title = "ely.by account",
+                    subtitle = "Free · skins & capes, ely-enabled servers",
+                    badge = "2",
+                    selected = false
+                ) { dialog = "ely" }
+
+                AccountReferenceOption(
+                    title = "Local profile",
+                    subtitle = "Offline · pick any name, no password",
+                    badge = "3",
+                    selected = false
+                ) { dialog = "local" }
+
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    "Type the name other players will see. Nothing leaves your device.",
-                    color = RefMuted,
-                    style = MaterialTheme.typography.titleMedium
+                    "// credentials go straight to the provider — the launcher never sees your password",
+                    color = Color(0xFF5F6470),
+                    style = MaterialTheme.typography.bodySmall
                 )
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = playerName,
-                    onValueChange = { value ->
-                        if (value.length <= 16 && value.all { it.isLetterOrDigit() || it == '_' }) {
-                            playerName = value
-                            created = false
-                        }
-                    },
-                    placeholder = {
-                        Text(">_ player_name", color = Color(0xFF5C606A))
-                    },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(82.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF454A58),
-                        unfocusedBorderColor = Color(0xFF30343E),
-                        focusedTextColor = RefText,
-                        unfocusedTextColor = RefText,
-                        cursorColor = RefText
-                    )
-                )
-
-                Text("○  3 – 16 characters", color = RefMuted)
-                Text("○  letters, numbers, underscore", color = RefMuted)
-                Text("○  not already on this launcher", color = RefMuted)
-
-                Spacer(Modifier.weight(1f))
-
-                Button(
-                    onClick = { created = true },
-                    enabled = playerName.length in 3..16,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF284F7E),
-                        disabledContainerColor = Color(0xFF1C3554),
-                        contentColor = Color(0xFF121722),
-                        disabledContentColor = Color(0xFF111722)
-                    )
-                ) {
-                    Text("MINT PROFILE", fontWeight = FontWeight.SemiBold, letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp))
-                }
-
-                if (created) {
-                    Text(
-                        "Profile ready · $playerName",
-                        color = Color(0xFFB8C5D8),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
         }
+
+        when (dialog) {
+            "local" -> LocalProfileDialog(onDismiss = { dialog = null })
+            "microsoft" -> ProviderDialog("Microsoft account", "Premium · full online play", "CONTINUE") { dialog = null }
+            "ely" -> ProviderDialog("ely.by account", "Free · skins & capes, ely-enabled servers", "CONTINUE") { dialog = null }
+        }
+    }
+}
+
+@Composable
+private fun AccountReferenceOption(
+    title: String,
+    subtitle: String,
+    badge: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        Modifier.fillMaxWidth().height(104.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) Color(0xFFE8ECF2) else Color(0xD9161A24)
+        ),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(60.dp).clip(RoundedCornerShape(17.dp)).background(if (selected) Color(0xFF080A0F) else Color(0xFF080A0F)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    when {
+                        title.startsWith("Microsoft") -> "▦"
+                        title.startsWith("ely") -> "◇"
+                        else -> "♟"
+                    },
+                    color = if (selected) Color.White else Color(0xFFAFA5FF),
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+            Spacer(Modifier.width(18.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, color = if (selected) Color(0xFF17191F) else RefText, style = MaterialTheme.typography.titleLarge)
+                Text(subtitle, color = if (selected) Color(0xFF565A64) else RefMuted)
+            }
+            Text(
+                "$badge  →",
+                color = if (selected) Color(0xFF17191F) else RefText,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(if (selected) Color(0xFF17191F) else Color.Transparent)
+                    .padding(horizontal = 12.dp, vertical = 7.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun LocalProfileDialog(onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    ReferenceDialog(title = "Mint a local profile", onDismiss = onDismiss) {
+        Text("Type the name other players will see. Nothing leaves your device.", color = RefMuted)
+        OutlinedTextField(
+            value = name,
+            onValueChange = { if (it.length <= 16 && it.all { c -> c.isLetterOrDigit() || c == '_' }) name = it },
+            placeholder = { Text(">_ player_name", color = Color(0xFF5C606A)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        )
+        Text("○  3 – 16 characters", color = RefMuted)
+        Text("○  letters, numbers, underscore", color = RefMuted)
+        Text("○  not already on this launcher", color = RefMuted)
+        Button(
+            onClick = onDismiss,
+            enabled = name.length in 3..16,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF284F7E))
+        ) { Text("MINT PROFILE") }
+    }
+}
+
+@Composable
+private fun ProviderDialog(title: String, subtitle: String, action: String, onDone: () -> Unit) {
+    ReferenceDialog(title = "Sign in", onDismiss = onDone) {
+        Text(title, color = RefText, style = MaterialTheme.typography.headlineMedium)
+        Text(subtitle, color = RefMuted)
+        OutlinedTextField(
+            value = "",
+            onValueChange = {},
+            label = { Text("Email or username") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Button(
+            onClick = onDone,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4C8E32))
+        ) { Text(action) }
     }
 }
 
