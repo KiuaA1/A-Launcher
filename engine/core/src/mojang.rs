@@ -20,6 +20,40 @@ impl MojangResolver {
     pub fn version_json_from_str(json: &str) -> Result<VersionJson, EngineError> {
         parse_version_json(json)
     }
+
+    pub fn resolve_with_transport<T: crate::download::DownloadTransport>(
+        &self,
+        version: &str,
+        transport: &T,
+        metadata_root: &Path,
+        platform: crate::resolver::TargetPlatform,
+    ) -> Result<Resolution, EngineError> {
+        let manifest = parse_manifest_json(&self.manifest_json)?;
+        let entry = manifest.versions.iter().find(|v| v.id == version)
+            .ok_or_else(|| EngineError::VersionNotFound(version.into()))?;
+
+        let destination = Self::cached_version_path(metadata_root, version);
+        if !destination.exists() {
+            if let Some(parent) = destination.parent() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| EngineError::DownloadFailed(format!("create metadata cache: {e}")))?;
+            }
+            transport.fetch_to(&entry.url, &destination)?;
+        }
+
+        let version_json = std::fs::read_to_string(&destination)
+            .map_err(|e| EngineError::ManifestInvalid(format!("read version metadata: {e}")))?;
+        let parsed = parse_version_json(&version_json)?;
+
+        if parsed.id != version {
+            return Err(EngineError::ManifestInvalid(format!(
+                "version metadata id {} does not match requested version {version}",
+                parsed.id
+            )));
+        }
+
+        resolution_from_version_json_for(&version_json, platform)
+    }
 }
 
 impl VersionResolver for MojangResolver {
