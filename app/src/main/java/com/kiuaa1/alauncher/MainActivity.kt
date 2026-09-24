@@ -50,7 +50,10 @@ private fun LauncherShell(api: LauncherApi) {
                 onInstances = { selected = 1 }
             )
             1 -> InstancesScreen(api)
-            else -> PlaceholderScreen(destinations[selected])
+            2 -> AccountsReferenceScreen()
+            3 -> BrowseResourcesReferenceScreen()
+            4 -> AdvancedReferenceScreen()
+            else -> PlaceholderScreen("A-Launcher")
         }
 
         ReferenceSidebar(
