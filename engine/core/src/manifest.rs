@@ -26,7 +26,7 @@ pub struct ArtifactDownload { pub sha1: String, pub size: u64, pub url: String, 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Library { pub name: String, #[serde(default)] pub downloads: LibraryDownloads, #[serde(default)] pub rules: Vec<Rule> }
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct LibraryDownloads { #[serde(default)] pub artifact: Option<ArtifactDownload> }
+pub struct LibraryDownloads { #[serde(default)] pub artifact: Option<ArtifactDownload>, #[serde(default)] pub classifiers: Option<std::collections::HashMap<String, ArtifactDownload>> }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rule { pub action: String, #[serde(default)] pub os: Option<OsRule> }
 #[derive(Debug, Clone, Serialize, Deserialize)]
