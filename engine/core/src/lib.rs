@@ -3,6 +3,8 @@ pub mod cache;
 pub mod download;
 pub mod error;
 pub mod fs;
+pub mod classpath;
+pub mod native;
 pub mod instance;
 pub mod launch;
 pub mod manifest;
