@@ -39,12 +39,12 @@ fn download_artifact<T: DownloadTransport>(
 }
 
 pub fn download_resolution<T: DownloadTransport>(
-    transport: &T, layout: &StorageLayout, resolution: &Resolution
+    transport: &T, layout: &StorageLayout, instance_id: &str, resolution: &Resolution
 ) -> Result<ArtifactDownloadSummary, EngineError> {
     layout.ensure_dirs().map_err(|e| EngineError::DownloadFailed(format!("prepare storage: {e}")))?;
     let mut summary = ArtifactDownloadSummary::default();
 
-    let client_destination = layout.instance_game_dir(&resolution.minecraft_version).join("client.jar");
+    let client_destination = layout.instance_game_dir(instance_id).join("client.jar");
     summary.add(prepare_download(transport, &DownloadRequest {
         url: resolution.client_jar.url.clone(), destination: client_destination,
         expected_sha1: resolution.client_jar.sha1.clone(), expected_size: resolution.client_jar.size,
