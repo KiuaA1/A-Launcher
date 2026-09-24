@@ -87,6 +87,8 @@ private fun HomeScreen(
     launchStatus: LaunchStatus,
     onLaunch: () -> Unit
 ) {
+    var accountSwitcher by remember { mutableStateOf(false) }
+
     Box(Modifier.fillMaxSize()) {
         Starfield()
 
@@ -94,7 +96,7 @@ private fun HomeScreen(
             Modifier.fillMaxSize().padding(start = 145.dp, end = 30.dp, top = 20.dp, bottom = 22.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            ReferenceTopBar()
+            ReferenceTopBar(onAccountClick = { accountSwitcher = true })
 
             Column(
                 Modifier.fillMaxWidth().weight(1f),
@@ -115,6 +117,10 @@ private fun HomeScreen(
                 onInstances = onInstances
             )
         }
+    }
+
+    if (accountSwitcher) {
+        AccountSwitcherReferenceDialog(onDismiss = { accountSwitcher = false })
     }
 }
 
@@ -152,7 +158,7 @@ private fun Starfield() {
 }
 
 @Composable
-private fun ReferenceTopBar() {
+private fun ReferenceTopBar(onAccountClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,7 +176,10 @@ private fun ReferenceTopBar() {
         }
 
         Row(
-            Modifier.clip(RoundedCornerShape(30.dp)).background(Glass).padding(horizontal = 13.dp, vertical = 9.dp),
+            Modifier.clip(RoundedCornerShape(30.dp))
+                .background(Glass)
+                .clickable(onClick = onAccountClick)
+                .padding(horizontal = 13.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(Modifier.size(42.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFFC8CBD0)), contentAlignment = Alignment.Center) {
@@ -188,6 +197,113 @@ private fun ReferenceTopBar() {
             )
             Spacer(Modifier.width(8.dp))
             Text("⌄", color = Color.White, style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
+
+@Composable
+private fun AccountSwitcherReferenceDialog(onDismiss: () -> Unit) {
+    Box(
+        Modifier.fillMaxSize().background(Color(0x99000000)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.widthIn(min = 620.dp, max = 760.dp).padding(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xF016181F)),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Column(
+                Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("A C C O U N T S", color = Muted, style = MaterialTheme.typography.labelMedium)
+                        Text("Who is playing?", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color(0x181F2530),
+                        onClick = onDismiss
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("×", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = Color(0x332F3440))
+
+                Card(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth().height(92.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0x20272B34)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x55484D59)),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxSize().padding(horizontal = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier.size(58.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF171A22)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("+", color = Color(0xFFE3E7EF), style = MaterialTheme.typography.displaySmall)
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column {
+                            Text("Add account", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                            Text("CREATE OR SIGN IN", color = Muted, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+
+                Card(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(118.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1D2028)),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFDDE1E8)),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxSize().padding(horizontal = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier.size(58.dp).clip(RoundedCornerShape(15.dp)).background(Color(0xFF111319)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("■", color = Color(0xFFC7CBD2), style = MaterialTheme.typography.titleLarge)
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("kiua", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("LOCAL  •  ACTIVE SKIN SLOT 1", color = Muted, style = MaterialTheme.typography.labelMedium)
+                        }
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = RoundedCornerShape(22.dp),
+                            color = Color(0xFFE4E8EF),
+                            contentColor = Color(0xFF16181E)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("✓", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text("⌫", color = Color(0xFF7D828E), style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+
+                Text(
+                    "Tap an account to sign in  ·  bin icon removes it",
+                    color = Color(0xFF6D727E),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
         }
     }
 }
