@@ -1,6 +1,6 @@
 use std::{fs::File, io, path::{Path, PathBuf}};
 use zip::ZipArchive;
-use crate::{error::EngineError, resolver::MinecraftArtifact};
+use crate::{error::EngineError, resolver::{maven_path, MinecraftArtifact}};
 
 fn safe_entry(name: &str) -> Option<PathBuf> {
     let p=Path::new(name);
@@ -32,5 +32,8 @@ pub fn extract_native_jar(jar: &Path, destination: &Path) -> Result<usize, Engin
 }
 
 pub fn native_paths(artifacts: &[MinecraftArtifact], library_root: &Path) -> Vec<PathBuf> {
-    artifacts.iter().filter_map(|a| a.path.as_ref().map(|p| library_root.join(p))).collect()
+    artifacts.iter().filter_map(|a| {
+        let rel = a.path.clone().or_else(|| maven_path(&a.id, a.classifier.as_deref(), "jar").ok());
+        rel.map(|p| library_root.join(p))
+    }).collect()
 }
