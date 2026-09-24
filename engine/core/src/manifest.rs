@@ -50,14 +50,37 @@ mod tests {
 pub fn merge_version_json(parent: &VersionJson, child: &VersionJson) -> VersionJson {
     let mut merged = parent.clone();
     merged.id = child.id.clone();
-    merged.main_class = if child.main_class.trim().is_empty() { parent.main_class.clone() } else { child.main_class.clone() };
     merged.inherits_from = child.inherits_from.clone();
-    merged.java_version = child.java_version.clone().or_else(|| parent.java_version.clone());
+
+    if !child.main_class.trim().is_empty() {
+        merged.main_class = child.main_class.clone();
+    }
+    if child.java_version.is_some() {
+        merged.java_version = child.java_version.clone();
+    }
+
+    // Child metadata owns the client download when present; the model requires one.
     merged.downloads = child.downloads.clone();
+
+    // Libraries are additive across inheritance. Keep child order after parent order.
     let mut libraries = parent.libraries.clone();
-    libraries.extend(child.libraries.clone());
+    libraries.extend(child.libraries.iter().cloned());
     merged.libraries = libraries;
-    merged.arguments = child.arguments.clone().or_else(|| parent.arguments.clone());
-    merged.minecraft_arguments = child.minecraft_arguments.clone().or_else(|| parent.minecraft_arguments.clone());
+
+    // Modern arguments are inherited only when the child does not define them.
+    // If both exist, the child's complete argument lists are authoritative.
+    if child.arguments.is_some() {
+        merged.arguments = child.arguments.clone();
+    } else {
+        merged.arguments = parent.arguments.clone();
+    }
+
+    // Legacy arguments follow the same child-over-parent rule.
+    if child.minecraft_arguments.is_some() {
+        merged.minecraft_arguments = child.minecraft_arguments.clone();
+    } else {
+        merged.minecraft_arguments = parent.minecraft_arguments.clone();
+    }
+
     merged
 }
