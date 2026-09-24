@@ -42,7 +42,7 @@ impl LaunchSessionRegistry{
  pub fn apply_process_events(&mut self,id:&str,process:&ManagedProcess)->Result<usize,EngineError>{
   let session=self.sessions.get_mut(id).ok_or_else(||EngineError::RuntimeUnavailable(format!("launch session not found: {id}")))?;
   let mut count=0;
-  for event in process.events().try_iter(){session.apply(event);count+=1;}
+  for event in process.drain_events(){session.apply(event);count+=1;}
   Ok(count)
  }
 }
