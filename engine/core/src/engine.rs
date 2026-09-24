@@ -54,7 +54,7 @@ impl LauncherEngine {
   let prep=LaunchPreparation::from_metadata(version,resolution,game_directory)?;
   let required=prep.java_major_version;
   let selected=runtime.select(required,None)?;
-  prep.build_launch_plan(&selected.executable.to_string_lossy(),&classpath,version.arguments.as_ref().ok_or_else(||EngineError::InvalidLaunchPlan("modern arguments are missing".into()))?,context)
+  prep.build_launch_plan(&selected.executable.to_string_lossy(),&classpath,version.arguments.as_ref(),version.minecraft_arguments.as_deref(),context)
  }
 
  pub fn launch(&self,plan:&LaunchPlan)->Result<(ManagedProcess,Vec<LaunchEvent>),EngineError>{
