@@ -28,10 +28,11 @@ private val GlassStrong = Color(0xE31A1E2A)
 private val Muted = Color(0xFFB9BDC8)
 
 class MainActivity : ComponentActivity() {
-    private val launcherApi: LauncherApi = LocalLauncherApi()
+    private lateinit var launcherApi: LauncherApi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        launcherApi = LocalLauncherApi(NativeLauncherBridgeImpl(filesDir.absolutePath))
         setContent { MaterialTheme { LauncherShell(launcherApi) } }
     }
 }
