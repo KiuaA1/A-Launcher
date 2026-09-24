@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use crate::{download::{prepare_download, DownloadRequest, DownloadStatus, DownloadTransport}, error::EngineError, fs::StorageLayout, resolver::{MinecraftArtifact, Resolution}};
+use crate::{download::{prepare_download, DownloadRequest, DownloadStatus, DownloadTransport}, error::EngineError, fs::StorageLayout, resolver::{maven_path, MinecraftArtifact, Resolution}};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ArtifactDownloadSummary { pub cached: usize, pub downloaded: usize }
@@ -18,7 +18,11 @@ fn safe_relative_path(path: &str) -> Option<PathBuf> {
 }
 
 fn destination_for(layout: &StorageLayout, artifact: &MinecraftArtifact) -> Result<PathBuf, EngineError> {
-    let rel = artifact.path.as_deref()
+    let derived = if artifact.path.is_none() {
+        Some(maven_path(&artifact.id, artifact.classifier.as_deref(), "jar")
+            .map_err(|e| EngineError::DownloadFailed(format!("derive Maven path for {}: {e}", artifact.id)))?)
+    } else { None };
+    let rel = artifact.path.as_deref().or(derived.as_deref())
         .and_then(safe_relative_path)
         .ok_or_else(|| EngineError::DownloadFailed(format!("artifact {} has no safe repository path", artifact.id)))?;
     Ok(layout.libraries.join(rel))
