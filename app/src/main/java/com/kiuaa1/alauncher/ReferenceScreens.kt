@@ -570,17 +570,113 @@ fun BrowseResourcesReferenceScreen() {
 
 @Composable
 fun AdvancedReferenceScreen() {
-    ReferencePage("Advanced", "Everything else — only if you know what you are doing.") {
-        OutlinedTextField("", {}, label = { Text("Search settings") }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(12.dp))
-        ReferenceRow("Allow microphone", "Click to request the notification permission.", "OFF")
-        ReferenceRow("Animation Amplitude", "How far cards, rows and pages travel while they animate.", "5")
-        ReferenceRow("Wipe Controller Map", "Show custom controller configuration", "›")
-        ReferenceRow("Enable shader dumping", "Log command output into the log file.", "OFF")
-        ReferenceRow("Experimental JVM tuning", "Lets the performance engine apply additional heap headroom.", "OFF")
+    var query by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    val rows = listOf(
+        Triple("Check for Update", "Check online for the latest A-Launcher release", "↻"),
+        Triple("Clear Shader & Temporary Caches", "Free up storage by deleting temporary rendering files", "▣"),
+        Triple("Reset Launcher Settings", "Restore factory defaults for all configuration profiles", "♜")
+    ).filter { query.isBlank() || it.first.contains(query, ignoreCase = true) || it.second.contains(query, ignoreCase = true) }
+
+    Box(Modifier.fillMaxSize().background(Color(0xFF090A0F))) {
+        Column(
+            Modifier.fillMaxSize().padding(start = 100.dp, top = 26.dp, end = 30.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(58.dp).clip(RoundedCornerShape(30.dp)).background(Color(0xFF171A22)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("‹", color = RefText, style = MaterialTheme.typography.headlineMedium)
+                }
+                Spacer(Modifier.width(18.dp))
+                Column {
+                    Text("Advanced", color = RefText, style = MaterialTheme.typography.headlineLarge)
+                    Text("Everything else — only if you know what you are doing", color = RefMuted, style = MaterialTheme.typography.titleMedium)
+                }
+            }
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                placeholder = { Text("Search settings", color = RefMuted) },
+                leadingIcon = { Text("⌕", color = RefMuted, style = MaterialTheme.typography.headlineSmall) },
+                shape = RoundedCornerShape(20.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF343841),
+                    unfocusedBorderColor = Color(0xFF292C34),
+                    focusedTextColor = RefText,
+                    unfocusedTextColor = RefText,
+                    cursorColor = RefText
+                )
+            )
+
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xD9161921)),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column {
+                    rows.forEachIndexed { index, row ->
+                        Card(
+                            onClick = { message = row.first },
+                            modifier = Modifier.fillMaxWidth().height(104.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            shape = RoundedCornerShape(0.dp)
+                        ) {
+                            Row(
+                                Modifier.fillMaxSize().padding(horizontal = 28.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    Modifier.size(42.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(row.third, color = RefMuted, style = MaterialTheme.typography.headlineSmall)
+                                }
+                                Spacer(Modifier.width(18.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(row.first, color = RefText, style = MaterialTheme.typography.titleLarge)
+                                    Text(row.second, color = RefMuted, style = MaterialTheme.typography.bodyLarge)
+                                }
+                                Text("›", color = RefMuted, style = MaterialTheme.typography.headlineSmall)
+                            }
+                        }
+                        if (index != rows.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 28.dp),
+                                color = Color(0xFF2A2D35)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        message?.let { title ->
+            AlertDialog(
+                onDismissRequest = { message = null },
+                title = { Text(title) },
+                text = {
+                    Text(
+                        when (title) {
+                            "Check for Update" -> "A-Launcher will check its configured release source for a newer version."
+                            "Clear Shader & Temporary Caches" -> "Temporary rendering and shader cache files can be removed without deleting your instances."
+                            else -> "This action restores launcher configuration defaults. Your Minecraft instances are kept."
+                        }
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { message = null }) { Text("OK") }
+                }
+            )
+        }
     }
 }
-
 @Composable
 fun GameReferenceScreen() {
     var ram by remember { mutableIntStateOf(1024) }
