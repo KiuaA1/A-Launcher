@@ -1,0 +1,12 @@
+[package]
+name = "a-launcher-android"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+a-launcher-core = { path = "../core" }
+jni = "0.21"
+serde_json = "1"
