@@ -49,10 +49,10 @@ private fun LauncherShell(api: LauncherApi) {
                 onSelectInstance = { selectedInstance = it },
                 onInstances = { selected = 1 }
             )
-            1 -> CursorStudioReferenceScreen()
-            2 -> AccountsReferenceScreen()
-            3 -> BrowseResourcesReferenceScreen()
-            4 -> AdvancedReferenceScreen()
+            1 -> InstancesReferenceScreen(api)
+            2 -> BrowseResourcesReferenceScreen()
+            3 -> AccountsReferenceScreen()
+            4 -> SettingsReferenceScreen()
             else -> PlaceholderScreen("A-Launcher")
         }
 
