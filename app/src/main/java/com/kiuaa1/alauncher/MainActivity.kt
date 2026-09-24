@@ -42,12 +42,16 @@ private fun LauncherShell(api: LauncherApi) {
     var selected by remember { mutableIntStateOf(0) }
     var selectedInstance by remember { mutableStateOf(api.listInstances().firstOrNull()?.id ?: "") }
     var launchStatus by remember { mutableStateOf(LaunchStatus.Idle) }
-    var showRuntimeSetup by remember { mutableStateOf(false) }
+    var runtimeScreen by remember { mutableIntStateOf(0) }
 
     Box(Modifier.fillMaxSize().background(Space)) {
-        if (showRuntimeSetup) {
-            RuntimeSetupReferenceScreen(onDone = { showRuntimeSetup = false })
-        } else when (selected) {
+        when (runtimeScreen) {
+            1 -> JavaRuntimeSelectionScreen(
+                onSkip = { runtimeScreen = 0 },
+                onInstall = { runtimeScreen = 2 }
+            )
+            2 -> RuntimeSetupReferenceScreen(onDone = { runtimeScreen = 0 })
+            else -> when (selected) {
             0 -> HomeScreen(
                 instances = api.listInstances(),
                 selectedInstance = selectedInstance,
@@ -98,7 +102,7 @@ private fun HomeScreen(
                 Spacer(Modifier.height(2.dp))
                 LaunchButton(status = launchStatus, onClick = onLaunch)
                 Spacer(Modifier.height(13.dp))
-                RuntimePill(onClick = { showRuntimeSetup = true })
+                RuntimePill(onClick = { runtimeScreen = 1 })
             }
 
             InstanceRail(
