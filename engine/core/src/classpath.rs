@@ -8,7 +8,14 @@ pub struct Classpath {
 
 impl Classpath {
     pub fn as_separator_string(&self) -> String {
-        self.entries.iter().map(|p| p.to_string_lossy().into_owned()).collect::<Vec<_>>().join(":")
+        self.as_separator_string_for(std::path::MAIN_SEPARATOR)
+    }
+    pub fn as_separator_string_for(&self, separator: char) -> String {
+        self.entries.iter().map(|p| p.to_string_lossy().into_owned()).collect::<Vec<_>>().join(&separator.to_string())
+    }
+    pub fn as_classpath_string(&self, os_name: &str) -> String {
+        let separator = if os_name == "windows" { ';' } else { ':' };
+        self.as_separator_string_for(separator)
     }
 }
 
