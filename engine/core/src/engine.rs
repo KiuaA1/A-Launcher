@@ -83,6 +83,7 @@ impl LauncherEngine {
  pub fn build_launch_plan(&self,instance_id:&str,version:&VersionJson,resolution:Resolution,runtime:&RuntimeManager,context:LaunchContext)->Result<LaunchPlan,EngineError>{
   let config=self.instances.load(instance_id)?;
   validate_instance_launch(&self.storage, &config)?;
+  validate_resolved_artifacts(&self.storage, instance_id, &resolution)?;
   if config.instance.minecraft_version!=version.id{return Err(EngineError::InvalidLaunchPlan("instance and version disagree".into()));}
   let prep0=LaunchPreparation::from_metadata(version,resolution.clone(),config.instance.game_directory.clone())?;
   let prep=LaunchPreparation{memory_mb:config.memory_mb,instance_jvm_args:config.jvm_args.clone(),instance_game_args:config.game_args.clone(),..prep0};
@@ -141,6 +142,44 @@ impl LauncherEngine {
  }
 }
 
+
+pub fn validate_resolved_artifacts(
+    storage: &StorageLayout,
+    instance_id: &str,
+    resolution: &Resolution,
+) -> Result<(), EngineError> {
+    let client = storage.instance_game_dir(instance_id).join("client.jar");
+    if !client.is_file() {
+        return Err(EngineError::InvalidLaunchPlan(format!("client JAR is missing: {}", client.display())));
+    }
+
+    for artifact in &resolution.libraries {
+        let rel = artifact.path.clone()
+            .or_else(|| maven_path(&artifact.id, artifact.classifier.as_deref(), "jar").ok())
+            .ok_or_else(|| EngineError::InvalidLaunchPlan(format!("cannot derive library path for {}", artifact.id)))?;
+        let path = storage.libraries.join(&rel);
+        if !path.is_file() {
+            return Err(EngineError::InvalidLaunchPlan(format!("library is missing: {}", path.display())));
+        }
+    }
+
+    let native_dir = storage.natives.join(instance_id);
+    if !resolution.native_libraries.is_empty() || native_dir.exists() {
+        if !native_dir.is_dir() {
+            return Err(EngineError::InvalidLaunchPlan(format!("native directory is missing: {}", native_dir.display())));
+        }
+        if resolution.native_libraries.len() > 0 {
+            let has_native = std::fs::read_dir(&native_dir)
+                .map_err(|e| EngineError::InvalidLaunchPlan(format!("read native directory: {e}")))?
+                .filter_map(Result::ok)
+                .any(|entry| entry.path().is_file());
+            if !has_native {
+                return Err(EngineError::InvalidLaunchPlan("native directory contains no extracted libraries".into()));
+            }
+        }
+    }
+    Ok(())
+}
 
 pub fn validate_instance_launch(storage:&StorageLayout,config:&InstanceConfig)->Result<(),EngineError>{
  let game_dir=&config.instance.game_directory;
