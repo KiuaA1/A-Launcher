@@ -59,23 +59,30 @@ pub fn merge_version_json(parent: &VersionJson, child: &VersionJson) -> VersionJ
         merged.java_version = child.java_version.clone();
     }
 
-    // Child metadata owns the client download when present; the model requires one.
+    // A child version is expected to provide its own client artifact.
+    // Libraries are inherited additively, preserving parent-before-child order.
     merged.downloads = child.downloads.clone();
 
-    // Libraries are additive across inheritance. Keep child order after parent order.
     let mut libraries = parent.libraries.clone();
     libraries.extend(child.libraries.iter().cloned());
     merged.libraries = libraries;
 
-    // Modern arguments are inherited only when the child does not define them.
-    // If both exist, the child's complete argument lists are authoritative.
-    if child.arguments.is_some() {
-        merged.arguments = child.arguments.clone();
-    } else {
-        merged.arguments = parent.arguments.clone();
+    // Argument arrays are inherited additively. Child entries run after
+    // parent entries, matching the layered nature of inherited profiles.
+    match (&parent.arguments, &child.arguments) {
+        (Some(p), Some(c)) => {
+            let mut arguments = p.clone();
+            arguments.jvm.extend(c.jvm.iter().cloned());
+            arguments.game.extend(c.game.iter().cloned());
+            merged.arguments = Some(arguments);
+        }
+        (None, Some(c)) => merged.arguments = Some(c.clone()),
+        (Some(p), None) => merged.arguments = Some(p.clone()),
+        (None, None) => merged.arguments = None,
     }
 
-    // Legacy arguments follow the same child-over-parent rule.
+    // Legacy versions expose one flat argument string, so a child value
+    // replaces the inherited value when present.
     if child.minecraft_arguments.is_some() {
         merged.minecraft_arguments = child.minecraft_arguments.clone();
     } else {
@@ -83,4 +90,54 @@ pub fn merge_version_json(parent: &VersionJson, child: &VersionJson) -> VersionJ
     }
 
     merged
+}
+
+#[cfg(test)]
+mod merge_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn version(id: &str, args: Option<Arguments>, libraries: Vec<Library>) -> VersionJson {
+        VersionJson {
+            id: id.into(),
+            main_class: "Main".into(),
+            inherits_from: None,
+            java_version: None,
+            downloads: VersionDownloads {
+                client: ArtifactDownload {
+                    sha1: "sha".into(), size: 1, url: "https://example.invalid/client.jar".into(), path: None,
+                },
+            },
+            libraries,
+            arguments: args,
+            minecraft_arguments: None,
+        }
+    }
+
+    fn library(name: &str) -> Library {
+        Library {
+            name: name.into(),
+            downloads: LibraryDownloads::default(),
+            rules: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn merges_libraries_and_argument_arrays() {
+        let parent = version(
+            "parent",
+            Some(Arguments { game: vec![json!("--parent")], jvm: vec![json!("-Dparent=true")] }),
+            vec![library("parent-lib")],
+        );
+        let child = version(
+            "child",
+            Some(Arguments { game: vec![json!("--child")], jvm: vec![json!("-Dchild=true")] }),
+            vec![library("child-lib")],
+        );
+
+        let merged = merge_version_json(&parent, &child);
+        assert_eq!(merged.libraries.len(), 2);
+        assert_eq!(merged.arguments.as_ref().unwrap().game.len(), 2);
+        assert_eq!(merged.arguments.as_ref().unwrap().jvm.len(), 2);
+    }
 }
