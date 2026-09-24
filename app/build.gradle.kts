@@ -5,7 +5,19 @@ plugins {
 }
 
 android { namespace = "com.kiuaa1.alauncher"; compileSdk = 36
-    defaultConfig { applicationId = "com.kiuaa1.alauncher"; minSdk = 26; targetSdk = 36; versionCode = 1; versionName = "0.1.0" }
+    defaultConfig {
+        applicationId = "com.kiuaa1.alauncher"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 1
+        versionName = "0.1.0"
+        externalNativeBuild {
+            cmake { cppFlags += "" }
+        }
+    }
+    externalNativeBuild {
+        cmake { path = file("src/main/cpp/CMakeLists.txt") }
+    }
 }
 
 dependencies {
